@@ -36,8 +36,6 @@ form {
 
 </style>
 <form>
-  <label><input type="radio" name="mode" value="multiples" checked> Multiples</label>
-  <label><input type="radio" name="mode" value="stacked"> Stacked</label>
 </form>
 <script src="d3.v3.min.js"></script>
 <script>
@@ -165,9 +163,15 @@ d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
 
   yIndividual = {};
+  yAxisIndividual =[];
   columns.forEach(function(d,i){
     yIndividual[d] = d3.scale.linear();
-    yIndividual[d].domain([0,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);//
+    yIndividual[d].domain([0,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
+
+    yAxisIndividual[i] = d3.svg.axis()
+      .scale(yIndividual[d])
+      .orient("left")
+      .ticks(2);
   });
 
 /* TODO OVERVIEW
@@ -179,14 +183,14 @@ d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
     .enter().append("g")
       .attr("class", "group")
       .attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
-
+/*
   group.append("text")
       .attr("class", "group-label")
       .attr("x", -6)
       .attr("y", function(d) {return yIndividual[d.key](d.values[0].value / 2); })//
       .attr("dy", ".35em")
       .text(function(d) { return "Group " + d.key; });
-
+*/
   group.selectAll("rect")
       .data(function(d) { return d.values; })
     .enter().append("rect")
@@ -199,11 +203,30 @@ d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
       .on('mouseover', function(d) {highlightON(d.runID)})
       .on('mouseout', function(d) {highlightOFF(d.runID)});
 
-  group.filter(function(d, i) { return !i; }).append("g")
+  group.filter(function(d, i) {return !i; })
+      .append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + y0.rangeBand() + ")")
       .call(xAxis);
 
+  for(var i=0;  i < group[0].length; i++){
+    d3.select(group[0][i]).append("g")
+    .attr("class", "y axis")
+    .call(yAxisIndividual[i])
+
+    .append("text")
+      .attr("class", "group-label")
+      .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3 //yIndividual[d.key](d.values[0].value)
+       //+yIndividual[d.key](yIndividual[d.key].rangeBand()/2 ) 
+       +"),rotate(-90)";})
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text(function(d){return d.key;});
+
+
+      console.log(i)
+  }
 /* TODO OVERVIEW
   overview.append("g")
       .attr("class", "x axis")
