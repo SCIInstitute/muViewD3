@@ -39,13 +39,15 @@ form {
   <label><input type="radio" name="mode" value="multiples" checked> Multiples</label>
   <label><input type="radio" name="mode" value="stacked"> Stacked</label>
 </form>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.v3.min.js"></script>
 <script>
 
 
 var margin = {top: 10, right: 20, bottom: 20, left: 60},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 500 - margin.top - margin.bottom,
+    marginOverview = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
+    heightOverview = 500 - marginOverview.top - marginOverview.bottom;
 
 var y0 = d3.scale.ordinal()
     .rangeRoundBands([height, 0], .2);
@@ -55,10 +57,25 @@ var y1 = d3.scale.linear();
 var x = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1, 0);
 
+
+
+var xOverview = d3.scale.ordinal()
+                .range([0, width]);
+
+var yOverview = d3.scale.linear()
+                .range([heightOverview, 0]);
+
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
 
+
+var xAxisOverview = d3.svg.axis()
+                .scale(xOverview)
+                .orient("bottom");
+
+
+// unused I do it manually
 var nest = d3.nest()
     .key(function(d) { return d.group; });
 
@@ -72,11 +89,42 @@ var color = d3.scale.category10();
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .attr("height", height + margin.top + margin.bottom);
+
+var main = svg.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.csv('d4s1_9vals.csv', function(error, data) {
+
+var overview = svg.append("g")
+                    .attr("class", "overview")
+                    .attr("transform", "translate(" + marginOverview.left + "," + marginOverview.top + ")");
+
+// brush tool to let us zoom and pan using the overview chart
+var brush = d3.svg.brush()
+                    .x(xOverview)
+                    .on("brush", brushed);
+
+
+function highlightON(runID){
+  d3.selectAll(".bar" + runID).style("fill" , "red");
+}
+
+function highlightOFF(runID, group){
+  d3.selectAll(".bar" + runID).style("fill", color(group));
+  d3.selectAll(".bar" + runID).style("fill", function(d) { return color(d.group); })
+}
+
+function brushed() {
+    // update the main chart's x axis data range
+    x.domain(brush.empty() ? xOverview.domain() : brush.extent());
+    // redraw the bars on the main chart
+    main.selectAll(".bar")
+            .attr("transform", function(d) { return "translate(" + x(d.runID) + ",0)"; })
+    // redraw the x axis of the main chart
+    main.select(".x.axis").call(xAxis);
+}
+
+d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
@@ -92,9 +140,14 @@ d3.csv('d4s1_9vals.csv', function(error, data) {
 
                 row = d;
                 runID = +runID;
+
+                d.runID = runID;
                 // d.runID = i;
                 columns.forEach(function(d,i){
                   row[d] = +row[d];
+                  if(d == "runWeight"){
+                    row[d] *= 0.1;
+                  }
                     vals[i].push({"runID": runID, "value": row[d], "group" : d});
                     if(row[d] > maximumValue)
                       maximumValue=row[d];
@@ -110,10 +163,15 @@ d3.csv('d4s1_9vals.csv', function(error, data) {
 
   stack(dataByGroup);
   x.domain(dataByGroup[0].values.map(function(d) { return d.runID; }));
+
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
   y1.domain([0, maximumValue]).range([y0.rangeBand(), 0]);
 
-  var group = svg.selectAll(".group")
+/* TODO OVERVIEW
+  xOverview.domain(d3.extent(data, function(d) { return d.runID; }));
+  yOverview.domain([0, maximumValue]);
+*/
+  var group = main.selectAll(".group")
       .data(dataByGroup)
     .enter().append("g")
       .attr("class", "group")
@@ -129,43 +187,85 @@ d3.csv('d4s1_9vals.csv', function(error, data) {
   group.selectAll("rect")
       .data(function(d) { return d.values; })
     .enter().append("rect")
+      .attr("class", function(d) { return "bar bar" + d.runID;})
       .style("fill", function(d) {return color(d.group); })
       .attr("x", function(d) { return x(d.runID); })
       .attr("y", function(d) { return y1(d.value); })
       .attr("width", x.rangeBand())
-      .attr("height", function(d) { return y0.rangeBand() - y1(d.value); });
+      .attr("height", function(d) { return y0.rangeBand() - y1(d.value); })
+      .on('mouseover', function(d) {highlightON(d.runID)})
+      .on('mouseout', function(d) {highlightOFF(d.runID)});
 
   group.filter(function(d, i) { return !i; }).append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + y0.rangeBand() + ")")
       .call(xAxis);
 
+/* TODO OVERVIEW
+  overview.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + heightOverview + ")")
+      .call(xAxisOverview);
+
+
+  overview.append("g")
+              .attr("class", "bars")
+      .selectAll(".barOverview")
+      .data(data)
+      .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) {return xOverview(d.runID) - 3; })
+          .attr("width", 6)
+          .attr("y", function(d) {
+              var total = 0;
+              for( var i=0; i<columns.length;i++){
+                total += d[columns[i]];
+              };
+             return yOverview(total); })
+
+          .attr("height", function(d) { return heightOverview - yOverview(numRuns); });//TODO
+
+  // add the brush target area on the overview chart
+  overview.append("g")
+              .attr("class", "x brush")
+              .call(brush)
+              .selectAll("rect")
+                  // -6 is magic number to offset positions for styling/interaction to feel right
+                  .attr("y", -6)
+                  // need to manually set the height because the brush has
+                  // no y scale, i.e. we should see the extent being marked
+                  // over the full height of the overview chart
+                  .attr("height", heightOverview + 7);  // +7 is magic number for styling
+**/
   d3.selectAll("input").on("change", change);
 
 /*
+start multiples and show stacked automatically
   var timeout = setTimeout(function() {
     d3.select("input[value=\"stacked\"]").property("checked", true).each(change);
   }, 2000);
 */
   function change() {
-    clearTimeout(timeout);
+    //clearTimeout(timeout);
     if (this.value === "multiples") transitionMultiples();
     else transitionStacked();
   }
 
   function transitionMultiples() {
-    var t = svg.transition().duration(750),
+    var t = main.transition().duration(750),
         g = t.selectAll(".group").attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
     g.selectAll("rect").attr("y", function(d) { return y1(d.value); });
     g.select(".group-label").attr("y", function(d) { return y1(d.values[0].value / 2); })
   }
 
   function transitionStacked() {
-    var t = svg.transition().duration(750),
+    var t = main.transition().duration(750),
         g = t.selectAll(".group").attr("transform", "translate(0," + y0(y0.domain()[0]) + ")");
     g.selectAll("rect").attr("y", function(d) { return y1(d.value + d.valueOffset); });
     g.select(".group-label").attr("y", function(d) { return y1(d.values[0].value / 2 + d.values[0].valueOffset); })
   }
+
+
 });
 
 </script>
