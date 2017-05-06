@@ -183,7 +183,11 @@ function highlightOFF(runID){
 
   if(runID == highlightImages[activeHighlight])
     return;
-  d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
+  else{
+    d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
+    d3.select("#image" + activeHighlight)
+        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
+  }
 }
 
 function brushed() {
