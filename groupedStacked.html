@@ -34,6 +34,26 @@ form {
   top: 10px;
 }
 
+.highlight0{
+  fill: rgb(255,0,0) !important;
+}
+
+.highlight1{
+  fill: rgb(0,255,0) !important;
+}
+
+.highlight2{
+  fill: rgb(0,0,255) !important;
+}
+
+.pcaBar{
+  fill: rgb(0,0,0);
+}
+
+.bar{
+  fill: rgb(100,100,100);
+}
+
 </style>
 <form>
 </form>
@@ -41,14 +61,31 @@ form {
 <script>
 
 
+
+
+// Change this to:
+// 1 for 9 run dataset
+// 2 for 41 run dataset
+// 3 for 137 run dataset
+var dataset = 3;
+
+
+
+
+var activeHighlight = 0;
+var numImages = 3;
+var numRuns=0;
+var highlightImages=[];
+
 var margin = {top: 10, right: 20, bottom: 20, left: 100},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
+    height = 1000 - margin.top - margin.bottom,
     marginOverview = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
+    marginImages = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
     heightOverview = 500 - marginOverview.top - marginOverview.bottom;
 
 var y0 = d3.scale.ordinal()
-    .rangeRoundBands([height, 0], .2);
+    .rangeRoundBands([500, 0], .2);
 
 
 var x = d3.scale.ordinal()
@@ -82,7 +119,34 @@ var stack = d3.layout.stack()
     .y(function(d) { return d.value; })
     .out(function(d, y0) { d.valueOffset = y0; });
 
-var color = function(d){ if(d.substring(0,3) == "pca" ) return 'black'; else return 'grey';};
+var setImage = function (curHighlight, curRun) {
+
+  highlightImages[curHighlight] = curRun;
+  d3.selectAll(".pcaBar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
+
+  d3.selectAll(".bar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
+  d3.selectAll(".bar"+curRun).classed("highlight"+curHighlight, true);
+
+  d3.select("#image" + curHighlight)
+        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
+
+}
+
+
+var colorClass = function(d, runID){
+
+  cssclass="";
+  for(var i=0;i<numImages;i++){
+    if(runID == highlightImages[i])
+      cssclass=cssclass.concat('highlight'+i);
+  }
+  if(d.substring(0,3) == "pca" )
+    cssclass=cssclass.concat(' pcaBar');
+  else
+    cssclass=cssclass.concat(' bar');
+
+  return cssclass;
+};
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -96,6 +160,12 @@ var overview = svg.append("g")
                     .attr("class", "overview")
                     .attr("transform", "translate(" + marginOverview.left + "," + marginOverview.top + ")");
 
+var images = svg.append("g")
+                    .attr("class", "images")
+                    .attr("transform", "translate(" + marginImages.left + "," + marginImages.top + ")");
+
+
+
 // brush tool to let us zoom and pan using the overview chart
 var brush = d3.svg.brush()
                     .x(xOverview)
@@ -103,12 +173,17 @@ var brush = d3.svg.brush()
 
 
 function highlightON(runID){
-  d3.selectAll(".bar" + runID).style("fill" , "red");
+  d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, true);
+  
+  d3.select("#image" + activeHighlight)
+        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+runID +".png");
 }
 
 function highlightOFF(runID){
-  d3.selectAll(".bar" + runID).style("fill", function(d) { return color(d.group);});
-  d3.selectAll(".bar" + runID).style("fill", function(d) { return color(d.group); })
+
+  if(runID == highlightImages[activeHighlight])
+    return;
+  d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
 }
 
 function brushed() {
@@ -121,13 +196,19 @@ function brushed() {
     main.select(".x.axis").call(xAxis);
 }
 
-d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
+
+var csvFile=[];
+
+csvFile[0] = 'data/d4s1_9vals_pcaWeight.csv';
+csvFile[1] = 'data/d4s1_9vals_pcaWeight.csv';
+csvFile[2] = 'data/d4s2_41vals_pcaWeight.csv';
+csvFile[3] = 'data/d4s3_137vals_pcaWeight.csv';
+d3.csv(csvFile[dataset], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
         var dataByGroup = [];
         var maximumValue = -100000;
-        var numRuns = 0;
 
         for(var i=0; i<columns.length;i++){
             vals[i] = [];
@@ -148,6 +229,31 @@ d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
                 });
                 numRuns++;
         });
+
+        for (var i = 0; i < numImages; i++) {
+            var r = images
+              .append("rect")
+                .attr("class", function(){return "highlight" + i;})
+                .attr("width", "250")
+                .attr("height", "190")
+                .attr("x", function(){return i*250+50*i;})
+                .attr("y","100")
+                .on("click", function(){
+                  activeHighlight = this.getAttribute("class").slice(-1);
+                });
+
+              images.append("image")
+                .attr("id", "image" + i)
+                .attr("height", "230")
+                .attr("width", "230")
+                .attr("x", function(){return i*250+50*i +10;})
+                .attr("y","80")
+                .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
+                .on("click", function(){
+                  activeHighlight = this.getAttribute("id").slice(-1);
+                });
+                  highlightImages[i]=Math.floor((numRuns/numImages)*i+1);
+        }
 
 
 
@@ -191,21 +297,25 @@ d3.csv('d4s3_137vals_pcaWeight.csv', function(error, data) {
   group.selectAll("rect")
       .data(function(d) { return d.values; })
     .enter().append("rect")
-      .attr("class", function(d) { return "bar bar" + d.runID;})
-      .style("fill", function(d) {return color(d.group); })
+      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID;})
+//      .style("fill", function(d) {return color(d.group); })
       .attr("x", function(d) { return x(d.runID); })
       .attr("y", function(d) { return yIndividual[d.group](d.value); })//
       .attr("width", x.rangeBand())
       .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })//
       .on('mouseover', function(d) {highlightON(d.runID)})
-      .on('mouseout', function(d) {highlightOFF(d.runID)});
-
+      .on('mouseout', function(d) {highlightOFF(d.runID)})
+      .on("click", function(d,i) {
+        console.log(d3.select("#image" + activeHighlight));
+        setImage(activeHighlight, i);
+      });
+/* no x - axis
   group.filter(function(d, i) {return !i; })
       .append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + y0.rangeBand() + ")")
       .call(xAxis);
-
+*/
   for(var i=0;  i < group[0].length; i++){
     d3.select(group[0][i]).append("g")
     .attr("class", "y axis")
