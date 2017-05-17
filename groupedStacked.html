@@ -272,6 +272,8 @@ d3.csv(csvFile[dataset], function(error, data) {
       });
 
 
+      // this function based on
+      //https://bl.ocks.org/mbostock/3885705
       function sort(key) {
 
           // Copy-on-write since tweens are evaluated after a delay.
