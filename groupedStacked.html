@@ -92,21 +92,9 @@ var x = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1, 0);
 
 
-
-var xOverview = d3.scale.ordinal()
-                .range([0, width]);
-
-var yOverview = d3.scale.linear()
-                .range([heightOverview, 0]);
-
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
-
-
-var xAxisOverview = d3.svg.axis()
-                .scale(xOverview)
-                .orient("bottom");
 
 
 // unused I do it manually
@@ -128,7 +116,7 @@ var setImage = function (curHighlight, curRun) {
   d3.selectAll(".bar"+curRun).classed("highlight"+curHighlight, true);
 
   d3.select("#image" + curHighlight)
-        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
+        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
 
 }
 
@@ -141,7 +129,7 @@ var colorClass = function(d, runID){
       cssclass=cssclass.concat('highlight'+i);
   }
   if(d.substring(0,3) == "pca" )
-    cssclass=cssclass.concat(' pcaBar');
+    cssclass=cssclass.concat(' bar');//pcaBar');
   else
     cssclass=cssclass.concat(' bar');
 
@@ -155,28 +143,17 @@ var svg = d3.select("body").append("svg")
 var main = svg.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
-var overview = svg.append("g")
-                    .attr("class", "overview")
-                    .attr("transform", "translate(" + marginOverview.left + "," + marginOverview.top + ")");
-
 var images = svg.append("g")
                     .attr("class", "images")
                     .attr("transform", "translate(" + marginImages.left + "," + marginImages.top + ")");
 
 
 
-// brush tool to let us zoom and pan using the overview chart
-var brush = d3.svg.brush()
-                    .x(xOverview)
-                    .on("brush", brushed);
-
-
 function highlightON(runID){
   d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, true);
   
   d3.select("#image" + activeHighlight)
-        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+runID +".png");
+        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+runID +".png");
 }
 
 function highlightOFF(runID){
@@ -186,18 +163,8 @@ function highlightOFF(runID){
   else{
     d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
     d3.select("#image" + activeHighlight)
-        .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
+        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
   }
-}
-
-function brushed() {
-    // update the main chart's x axis data range
-    x.domain(brush.empty() ? xOverview.domain() : brush.extent());
-    // redraw the bars on the main chart
-    main.selectAll(".bar")
-            .attr("transform", function(d) { return "translate(" + x(d.runID) + ",0)"; })
-    // redraw the x axis of the main chart
-    main.select(".x.axis").call(xAxis);
 }
 
 
@@ -252,7 +219,7 @@ d3.csv(csvFile[dataset], function(error, data) {
                 .attr("width", "230")
                 .attr("x", function(){return i*250+50*i +10;})
                 .attr("y","80")
-                .attr("xlink:href", "data/runPotValueImages/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
+                .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
                 .on("click", function(){
                   activeHighlight = this.getAttribute("id").slice(-1);
                 });
@@ -266,7 +233,7 @@ d3.csv(csvFile[dataset], function(error, data) {
         }
 
   stack(dataByGroup);
-  x.domain(dataByGroup[0].values.map(function(d) { return d.runID; }));
+  x.domain(data.map(function(d) { return d.runID; }));
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
 
   yIndividual = {};
@@ -281,30 +248,20 @@ d3.csv(csvFile[dataset], function(error, data) {
       .ticks(2);
   });
 
-/* TODO OVERVIEW
-  xOverview.domain(d3.extent(data, function(d) { return d.runID; }));
-  yOverview.domain([0, maximumValue]);
-*/
+
   var group = main.selectAll(".group")
       .data(dataByGroup)
     .enter().append("g")
       .attr("class", "group")
       .attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
-/*
-  group.append("text")
-      .attr("class", "group-label")
-      .attr("x", -6)
-      .attr("y", function(d) {return yIndividual[d.key](d.values[0].value / 2); })//
-      .attr("dy", ".35em")
-      .text(function(d) { return "Group " + d.key; });
-*/
+
+
   group.selectAll("rect")
       .data(function(d) { return d.values; })
     .enter().append("rect")
-      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID;})
-//      .style("fill", function(d) {return color(d.group); })
+      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID + " bar" + d.group;})
       .attr("x", function(d) { return x(d.runID); })
-      .attr("y", function(d) { return yIndividual[d.group](d.value); })//
+      .attr("y", function(d) { return yIndividual[d.group](d.value); })
       .attr("width", x.rangeBand())
       .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })//
       .on('mouseover', function(d) {highlightON(d.runID)})
@@ -313,18 +270,41 @@ d3.csv(csvFile[dataset], function(error, data) {
         console.log(d3.select("#image" + activeHighlight));
         setImage(activeHighlight, i);
       });
-/* no x - axis
-  group.filter(function(d, i) {return !i; })
-      .append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + y0.rangeBand() + ")")
-      .call(xAxis);
-*/
+
+
+      function sort(key) {
+
+          // Copy-on-write since tweens are evaluated after a delay.
+          var x0 = x.domain(data.sort(
+            function(a, b) {return b[key] - a[key]; })
+              .map(function(d) { return d.runID; }))
+              .copy();
+
+
+          for(var i=0;  i < columns.length; i++){
+
+          svg.selectAll(".bar"+columns[i])
+            .sort(function(a, b) {return x0(a.runID) - x0(b.runID); });
+
+          var transition = svg.transition().duration(750),
+            delay = function(d, i) { return i * 1; };
+
+          transition.selectAll(".bar")
+            .delay(delay)
+            .attr("x", function(d) {return x0(d.runID); });
+
+          transition.select(".x.axis")
+            .call(xAxis)
+            .selectAll("g")
+            .delay(delay);
+          }
+      }
+
+
   for(var i=0;  i < group[0].length; i++){
     d3.select(group[0][i]).append("g")
     .attr("class", "y axis")
     .call(yAxisIndividual[i])
-
     .append("text")
       .attr("class", "group-label")
       .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3 //yIndividual[d.key](d.values[0].value)
@@ -333,44 +313,9 @@ d3.csv(csvFile[dataset], function(error, data) {
       .attr("y", 6)
       .attr("dy", "0.71em")
       .attr("text-anchor", "end")
-      .text(function(d){return d.key;});
+      .text(function(d){return d.key;})
+      .on("click", function(d){sort(d.key);return d;});
   }
-/* TODO OVERVIEW
-  overview.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + heightOverview + ")")
-      .call(xAxisOverview);
-
-
-  overview.append("g")
-              .attr("class", "bars")
-      .selectAll(".barOverview")
-      .data(data)
-      .enter().append("rect")
-          .attr("class", "bar")
-          .attr("x", function(d) {return xOverview(d.runID) - 3; })
-          .attr("width", 6)
-          .attr("y", function(d) {
-              var total = 0;
-              for( var i=0; i<columns.length;i++){
-                total += d[columns[i]];
-              };
-             return yOverview(total); })
-
-          .attr("height", function(d) { return heightOverview - yOverview(numRuns); });//TODO
-
-  // add the brush target area on the overview chart
-  overview.append("g")
-              .attr("class", "x brush")
-              .call(brush)
-              .selectAll("rect")
-                  // -6 is magic number to offset positions for styling/interaction to feel right
-                  .attr("y", -6)
-                  // need to manually set the height because the brush has
-                  // no y scale, i.e. we should see the extent being marked
-                  // over the full height of the overview chart
-                  .attr("height", heightOverview + 7);  // +7 is magic number for styling
-**/
 
 });
 
