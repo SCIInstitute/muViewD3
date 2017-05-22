@@ -231,17 +231,18 @@ var dataset = 3;
 var activeHighlight = 0;
 var numImages = 3;
 var numRuns=0;
+var numVertices = 0;
 var highlightImages=[];
 var mousePosition = [0,0];
 var margin = {top: 10, right: 20, bottom: 20, left: 100},
     width = 960 - margin.left - margin.right,
-    height = 550 - margin.top - margin.bottom,
+    height = 750 - margin.top - margin.bottom,
     marginOverview = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
     marginImages = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
     heightOverview = 500 - marginOverview.top - marginOverview.bottom;
 
 
-
+var allPotentialFields = {};
 
 
 
@@ -250,6 +251,7 @@ var margin = {top: 10, right: 20, bottom: 20, left: 100},
 
 
 var scene, camera, renderer;
+var colBuf;
 var viewports = [];
 var geometry, material, mesh;
 var clearColorBackground = 0xE0E0E0;
@@ -260,7 +262,7 @@ var heightCanvas = 230;//window.innerHeight
 
 scene = new THREE.Scene()
 //camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
-camera = new THREE.OrthographicCamera(-30, 120, 100, -10, 0.1, 100000);
+camera = new THREE.OrthographicCamera(120, -30, 100, -10, 0.1, 100000);
 scene.add(camera)
 //camera.position.x = -80;
 //camera.position.y = 700;
@@ -275,11 +277,7 @@ var canvas = document.getElementById( "c" );
 
 function uniforms(opts) {
   opts = opts || {}
-  return {/*
-    color: {
-      type: 'c',
-      value: new THREE.Color(0x000000)
-    },*/
+  return {
     alpha: { type: 'f', value: 0.7 },
     pointSize: { type: 'f', value: 10 },
     shouldResize: { type: '1i', value: opts.shouldResize ? 1 : 0 }
@@ -325,13 +323,18 @@ d3.csv(positionFile, function(error, dataPos) {
 
     positions[i*3] = d.x, positions[i*3 + 1] = d.y, positions[i*3 + 2] = d.z;
     colors[i*3] = 0.5, colors[i*3 + 1] = 0.2, colors[i*3 + 2] = 0.4;
+    numVertices ++;
   });
+
+
+  //TODO load all runs and set color from potential values - greyscale
+  // then create d3 color scales and make global sclae then paint each point
 
   var sizes = new Float32Array(particles);
   for(var i = 0; i < particles; i++) sizes[i] = 1;
 
   var posBuff = new THREE.BufferAttribute(positions, 3);
-  var colBuf = new THREE.BufferAttribute(colors, 3);
+  colBuf = new THREE.BufferAttribute(colors, 3);
   cloudGeom.addAttribute('position', posBuff)
   cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
   cloudGeom.addAttribute('color', colBuf)
@@ -353,31 +356,7 @@ d3.csv(positionFile, function(error, dataPos) {
 
 
 // based on:http://stackoverflow.com/questions/30608723/is-it-possible-to-enable-unbounded-number-of-renderers-in-three-js/30633132#30633132
-  renderer.enableScissorTest( true );
-    for(var i = 0; i<numImages;i++){
-
-    // set the viewport
-    var width  = 250;//rect.right - rect.left;
-    var height = 200;//rect.bottom - rect.top;
-    var left   = (renderer.domElement.clientWidth/numImages) * i;//rect.left;
-    var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
-
-    //camera.aspect = width / height;
-    //     camera.updateProjectionMatrix();
-    renderer.setViewport( left, bottom, width, height );
-    renderer.setScissor( left, bottom, width, height );
-    renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
-    renderer.clear()
-    renderer.setClearColor(clearColorBackground);
-
-
-    renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-    renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
-
-    renderer.render( scene, camera );
-
-  }
-  renderer.enableScissorTest( false );
+  
 
 
 
@@ -451,7 +430,11 @@ var stack = d3.layout.stack()
     .y(function(d) { return d.value; })
     .out(function(d, y0) { d.valueOffset = y0; });
 
-var setImage = function (curHighlight, curRun) {
+
+
+
+
+var setImage = function (curHighlight, curRun, renderer) {
 
   highlightImages[curHighlight] = curRun;
   d3.selectAll(".pcaBar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
@@ -462,6 +445,54 @@ var setImage = function (curHighlight, curRun) {
   d3.select("#image" + curHighlight)
         .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
 
+  
+  for (var i=0; i< numImages; i++){
+    redraw(i, highlightImages[i], renderer);
+  }
+
+
+}
+
+
+var redraw = function(curHighlight, curRun, renderer){
+
+
+    renderer.enableScissorTest( true );
+    // set the viewport
+    var width  = 250;//rect.right - rect.left;
+    var height = 200;//rect.bottom - rect.top;
+    var left   = (renderer.domElement.clientWidth/numImages) * curHighlight;//rect.left;
+    var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
+
+    //camera.aspect = width / height;
+    //     camera.updateProjectionMatrix();
+    renderer.setViewport( left, bottom, width, height );
+    renderer.setScissor( left, bottom, width, height );
+    renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+curHighlight));
+    renderer.clear()
+    renderer.setClearColor(clearColorBackground);
+
+
+    renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+    renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+
+
+    setColbuf(curHighlight,curRun);
+    colBuf.needsUpdate = true;
+    renderer.render( scene, camera );
+    
+    renderer.enableScissorTest( false );
+
+
+}
+
+
+var setColbuf = function(curHighlight, curRun){
+
+  //colors = allPotentialFields.curRun.data;
+  for (var i=0; i< numVertices; i++){
+    colors[i*3 + curHighlight] = Math.random();
+  };
 }
 
 
@@ -555,10 +586,7 @@ d3.csv(csvFile[dataset], function(error, data) {
                 .attr("width", "250")
                 .attr("height", "190")
                 .attr("x", function(){return i*250+50*i;})
-                .attr("y","100")
-                .on("click", function(){
-                  activeHighlight = this.getAttribute("class").slice(-1);
-                });
+                .attr("y","100");
 
 
                 //var context = canvas.node().getContext("2d");
@@ -574,6 +602,9 @@ d3.csv(csvFile[dataset], function(error, data) {
                   activeHighlight = this.getAttribute("id").slice(-1);
                 });
                   highlightImages[i]=Math.floor((numRuns/numImages)*i+1);
+
+
+             
         }
 
 
@@ -617,7 +648,7 @@ d3.csv(csvFile[dataset], function(error, data) {
       .on('mouseover', function(d) {highlightON(d.runID)})
       .on('mouseout', function(d) {highlightOFF(d.runID)})
       .on("click", function(d,i) {
-        setImage(activeHighlight, i);
+        setImage(activeHighlight, i, renderer);
       });
 
 
@@ -671,7 +702,6 @@ d3.csv(csvFile[dataset], function(error, data) {
 
 
 });
-
 
 
 
