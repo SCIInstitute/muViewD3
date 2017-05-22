@@ -84,18 +84,21 @@ form {
 
 <script type="x-shader/x-vertex" id="vertexshader">
   attribute float size;
+  attribute vec3 color;
   uniform float pointSize;
-  uniform vec3 color;
+  //uniform vec3 color;
   uniform float alpha;
   varying vec4 vColor;
   varying vec2 myPosition;
   varying float mySize;
+  varying vec3 myColor;
   void main() {
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_PointSize = size;
     mySize = size;
+    myColor = color;
     gl_Position = projectionMatrix * mvPosition;
-    vColor = vec4(color, alpha);
+    vColor = vec4(color, alpha);//vec4(color, alpha);
   }
 </script>
 
@@ -103,17 +106,9 @@ form {
   varying vec4 vColor;
   varying vec2 myPosition;
   varying float mySize;
+  varying vec3 myColor;
   void main() {
-    float f = 0.5;
-    float d = abs(distance(gl_PointCoord - f, vec2(0.0, 0.0)));
-    float pixelD = (d + 0.5) * mySize;
-    if(pixelD + 0.5 < mySize) {
-      gl_FragColor = vec4(vColor.xyz, 0.9);
-    } else if(pixelD < mySize) {
-      gl_FragColor = vec4(vColor.xyz, 0.1);
-    } else {
-      discard;
-    }
+    gl_FragColor = vec4(myColor.xyz, 1);
   }
 </script>
 
@@ -277,34 +272,21 @@ var canvas = document.getElementById( "c" );
 
 function uniforms(opts) {
   opts = opts || {}
-  return {
+  return {/*
     color: {
       type: 'c',
-      value: new THREE.Color(0x3498db)
-    },
+      value: new THREE.Color(0x000000)
+    },*/
     alpha: { type: 'f', value: 0.7 },
     pointSize: { type: 'f', value: 10 },
     shouldResize: { type: '1i', value: opts.shouldResize ? 1 : 0 }
   }
 }
 
-var particles = 1000
-var mouseIdx = 200
-var positions = new Float32Array(particles * 3)
-var dx = 2
-var norm = d3.random.normal(0, 100)
-for(var i = 0; i < positions.length; i+=3) {
-  var xP = norm(), y = norm(), z = norm()
-  if (i / 3 < particles / 3) xP -= 0.5, y += 1, z -= 0.5
-  else if (i / 3 < particles / 3 * 2) xP += dx, y += dx, z += dx
-  else xP -= dx, y -= dx, z -= dx
-  positions[i] = xP, positions[i + 1] = y, positions[i + 2] = z
-}
-var sizes = new Float32Array(particles)
-for(var i = 0; i < particles; i++) sizes[i] = Math.random() * 10 + 3
 
 var attributes = {
-  size: { type: 'f', value: [] }
+  size: { type: 'f', value: [] },
+  color: { type: 'c', value: [] }
 }
 
 var cloudMat = new THREE.ShaderMaterial({
@@ -320,25 +302,97 @@ var cloudMat = new THREE.ShaderMaterial({
     // blendDst: THREE.OneMinusSrcAlphaFactor,
 })
 
-var cloudGeom = new THREE.BufferGeometry()
-var posBuff = new THREE.BufferAttribute(positions, 3)
-cloudGeom.addAttribute('position', posBuff)
-cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
-cloudGeom.computeBoundingSphere()
-
-var pointCloud = new THREE.PointCloud(cloudGeom, cloudMat)
-scene.add(pointCloud);
+var cloudGeom = new THREE.BufferGeometry();
+var positionFile = 'data/potentialFields/pointPosition.csv';
+var particles;
+var positions;
+var colors;
 
 
-renderer = new THREE.WebGLRenderer({alpha: true, canvas: canvas, antialias: true})
-renderer.setSize(widthCanvas, heightCanvas);
-renderer.setClearColor(clearColorBackground );
-document.body.appendChild(renderer.domElement)
+//var positions = [];
+d3.csv(positionFile, function(error, dataPos) {
+  particles = dataPos.length;
+  positions = new Float32Array(particles * 3);
+  colors = new Float32Array(particles * 3);
+
+  dataPos.forEach(function(d,i){
+    d.x = +d.x;
+    d.y = +d.y;
+    d.z = +d.z;
+
+    positions[i*3] = d.x, positions[i*3 + 1] = d.y, positions[i*3 + 2] = d.z;
+    colors[i*3] = 0.5, colors[i*3 + 1] = 0.2, colors[i*3 + 2] = 0.4;
+  });
+
+  var sizes = new Float32Array(particles);
+  for(var i = 0; i < particles; i++) sizes[i] = 1;
+
+  var posBuff = new THREE.BufferAttribute(positions, 3);
+  var colBuf = new THREE.BufferAttribute(colors, 3);
+  cloudGeom.addAttribute('position', posBuff)
+  cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
+  cloudGeom.addAttribute('color', colBuf)
+  cloudGeom.computeBoundingSphere()
+
+  var pointCloud = new THREE.PointCloud(cloudGeom, cloudMat)
+  scene.add(pointCloud);
 
 
-var nodes = d3.range(particles).map(function(d) { return {} })
-var mouseNode = { fixed: true }
-nodes.push(mouseNode)
+  renderer = new THREE.WebGLRenderer({alpha: true, canvas: canvas, antialias: true})
+  renderer.setSize(widthCanvas, heightCanvas);
+  renderer.setClearColor(clearColorBackground );
+  document.body.appendChild(renderer.domElement)
+
+
+
+
+
+
+
+// based on:http://stackoverflow.com/questions/30608723/is-it-possible-to-enable-unbounded-number-of-renderers-in-three-js/30633132#30633132
+
+
+
+
+  renderer.enableScissorTest( true );
+    for(var i = 0; i<numImages;i++){
+
+    // set the viewport
+    var width  = 250;//rect.right - rect.left;
+    var height = 200;//rect.bottom - rect.top;
+    var left   = (renderer.domElement.clientWidth/numImages) * i;//rect.left;
+    var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
+
+    //camera.aspect = width / height;
+    //     camera.updateProjectionMatrix();
+    renderer.setViewport( left, bottom, width, height );
+    renderer.setScissor( left, bottom, width, height );
+    renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
+    renderer.clear()
+    renderer.setClearColor(clearColorBackground);
+
+
+    renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+    renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+
+    renderer.render( scene, camera );
+
+  }
+  renderer.enableScissorTest( false );
+
+
+
+});
+
+
+
+
+
+
+
+
+
+
 
 
 // http://stackoverflow.com/questions/6338217/get-a-css-value-with-javascript
@@ -457,6 +511,7 @@ function highlightOFF(runID){
         .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
   }
 }
+
 
 
 var csvFile=[];
@@ -613,87 +668,6 @@ d3.csv(csvFile[dataset], function(error, data) {
       .text(function(d){return d.key;})
       .on("click", function(d){sort(d.key);return d;});
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// mouseNode.fixed = true
-
-var force = d3.layout.force()
-  .nodes(nodes)
-  .size([widthCanvas, heightCanvas])
-  .charge(function(d, i) { return -sizes[i] || -500 })
-  // .chargeDistance(10)
-  .start()
-
-
-
-d3.timer(function(d) {
-
-// based on:http://stackoverflow.com/questions/30608723/is-it-possible-to-enable-unbounded-number-of-renderers-in-three-js/30633132#30633132
-
-
-
-
-
-
-
-
-
-  force.start();
-  mouseNode.x = mousePosition[0], mouseNode.y = mousePosition[1]
-  for(var i = 0; i + 1 < nodes.length; i++) {
-    positions[i * 3] = nodes[i].x - widthCanvas / 2
-    positions[i * 3 + 1] = - (nodes[i].y - heightCanvas / 2)
-  }
-  posBuff.needsUpdate = true // Important!
-
-renderer.enableScissorTest( true );
-    for(var i = 0; i<numImages;i++){
-
-    // set the viewport
-    var width  = 250;//rect.right - rect.left;
-    var height = 200;//rect.bottom - rect.top;
-    var left   = (renderer.domElement.clientWidth/numImages) * i;//rect.left;
-    var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
-
-    //camera.aspect = width / height;
-    //     camera.updateProjectionMatrix();
-    renderer.setViewport( left, bottom, width, height );
-    renderer.setScissor( left, bottom, width, height );
-    renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
-    renderer.clear()
-    renderer.setClearColor(clearColorBackground);
-
-
-    renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-    renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
-
-    renderer.render( scene, camera );
-
-  }
-  renderer.enableScissorTest( false );
-})
-
-d3.select('#c')
-  .on('mousemove', updateMouse)
-  .call(d3.behavior.drag().on('drag', updateMouse))
-
-function updateMouse() {
-  var p = d3.mouse(this)
-  mousePosition = p
-}
-
 
 
 
