@@ -259,9 +259,12 @@ var widthCanvas = 900;//width;//window.innerWidth,
 var heightCanvas = 230;//window.innerHeight
 
 scene = new THREE.Scene()
-camera = new THREE.OrthographicCamera(widthCanvas / - 2, widthCanvas / 2, heightCanvas / 2, heightCanvas / - 2, 1, 10000)
+//camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
+camera = new THREE.OrthographicCamera(-30, 120, 100, -10, 0.1, 100000);
 scene.add(camera)
-camera.position.z = 1000;
+//camera.position.x = -80;
+//camera.position.y = 700;
+camera.position.z = 500;
 
 var canvas = document.getElementById( "c" );
 
@@ -350,10 +353,6 @@ d3.csv(positionFile, function(error, dataPos) {
 
 
 // based on:http://stackoverflow.com/questions/30608723/is-it-possible-to-enable-unbounded-number-of-renderers-in-three-js/30633132#30633132
-
-
-
-
   renderer.enableScissorTest( true );
     for(var i = 0; i<numImages;i++){
 
