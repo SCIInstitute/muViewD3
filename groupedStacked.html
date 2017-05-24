@@ -56,6 +56,7 @@ form {
   text-align: center;
   vertical-align: middle;
   line-height: 90px; 
+  margin-top: -220px;
 }
 
 .blockingDIV_0{
@@ -65,19 +66,19 @@ form {
 
 .blockingDIV_1{
   background-color: rgb(190,174,212);
-  margin-left: 400px;
+  margin-left: 360px;
 }
 
 .blockingDIV_2{
   background-color: rgb(253,192,134);
-  margin-left: 700px;
+  margin-left: 620px;
 }
 
 .canvasHeartImages{
   margin-left: 100px;
   z-index: 20;
-  position: relative;
-  margin-top:-30px;
+  position: absolute;
+  margin-top:-250px;
 }
 
 .pcaBar{
@@ -289,7 +290,7 @@ var margin = {top: 10, right: 20, bottom: 20, left: 100},
 if(showImages)
   height = 750 - margin.top - margin.bottom;
 else
-  height = 550 - margin.top - margin.bottom;
+  height = 750 - margin.top - margin.bottom;
 
 
 
@@ -476,13 +477,14 @@ var minPotentialValues = -15;
 var maxPotentialValues = 20;
 
 
+var colorAxisDomain = [minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues];
 var colorScales = {};
 colorScales.blackWhite = ["black", "white"];
 colorScales.puOr11 = ['#7f3b08', '#b35806', '#e08214', '#fdb863', '#fee0b6', '#f7f7f7', '#d8daeb', '#b2abd2', '#8073ac', '#542788', '#2d004b'];
 colorScales.brownBlue = ["#8c510a", "#d8b365", "#f6e8c3", "#f5f5f5", "#c7eae5", "#5ab4ac", "#01665e"];
 var colorScalePotentialValues = d3.scale.linear()
     //.domain([-2, 2])
-    .domain([minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues])
+    .domain(colorAxisDomain)
     .range(colorScales.puOr11);
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
@@ -503,6 +505,20 @@ function hexToRgb(hex) {
 }
 
 
+
+function linspace(start, end, n) {
+  var out = [];
+  var delta = (end - start) / (n - 1);
+
+  var i = 0;
+  while(i < (n - 1)) {
+      out.push(start + (i * delta));
+      i++;
+  }
+
+  out.push(end);
+  return out;
+}
 
 
 
@@ -626,7 +642,7 @@ var drawNow = function(renderer, colors) {
       // set the viewport
       var width  = 250;//rect.right - rect.left;
       var height = 200;//rect.bottom - rect.top;
-      var left   = (renderer.domElement.clientWidth/numImages) * i;//rect.left;
+      var left   = (width+imageFrameSize + 5)*i;//(renderer.domElement.clientWidth/numImages) * i;//rect.left;
       var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
 
       //camera.aspect = width / height;
@@ -870,6 +886,66 @@ d3.csv(csvFile[dataset], function(error, data) {
       .text(function(d){return d.key;})
       .on("click", function(d){sort(d.key);return d;});
   }
+
+
+  /// Append color legend
+
+  var legendWidth = 50;
+  var legendHeight =  195;
+
+  // append gradient bar
+  var gradient = main.append('defs')
+      .append('linearGradient')
+      .attr('id', 'gradient')
+      .attr('x1', '0%') // bottom
+      .attr('y1', '100%')
+      .attr('x2', '0%') // to top
+      .attr('y2', '0%')
+      .attr('spreadMethod', 'pad');
+
+  // programatically generate the gradient for the legend
+  // this creates an array of [pct, colour] pairs as stop
+  // values for legend
+  var pct = linspace(0, 100, colorScales.puOr11.length).map(function(d) {
+      return Math.round(d) + '%';
+  });
+
+  //var colourPct = d3.zip(pct, colorScales.puOr11);
+  var colourPct = d3.zip(pct, colorScales.puOr11);
+
+  colourPct.forEach(function(d) {
+      gradient.append('stop')
+          .attr('offset', d[0])
+          .attr('stop-color', d[1])
+          .attr('stop-opacity', 1);
+  });
+
+  main.append('rect')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr("transform", "translate(780,525)")
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#gradient)');
+
+  // create a scale and axis for the legend
+  var legendScale = d3.scale.linear()
+      .domain([minPotentialValues, maxPotentialValues])
+      .range([legendHeight, 0]);
+
+  var legendAxis = d3.svg.axis()
+      .scale(legendScale)
+      .orient("right")
+      .tickValues(d3.range(minPotentialValues, maxPotentialValues, 10))
+      .tickFormat(d3.format("d"));
+
+  main.append("g")
+      .attr("class", "legend axis")
+      .attr("transform", "translate(" +(780+ legendWidth) + ", 525)")
+      .call(legendAxis);
+
+
+
 });
 
 
