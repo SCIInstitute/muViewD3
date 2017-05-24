@@ -47,6 +47,39 @@ form {
   fill: rgb(253,192,134) !important;
 }
 
+.blockingDIV{
+  width:250px;
+  float: left;
+  z-index: 10;
+  height: 200px;
+  position: absolute;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 90px; 
+}
+
+.blockingDIV_0{
+  background-color: rgb(127,201,127);
+  margin-left: 100px;
+}
+
+.blockingDIV_1{
+  background-color: rgb(190,174,212);
+  margin-left: 400px;
+}
+
+.blockingDIV_2{
+  background-color: rgb(253,192,134);
+  margin-left: 700px;
+}
+
+.canvasHeartImages{
+  margin-left: 100px;
+  z-index: 20;
+  position: relative;
+  margin-top:-30px;
+}
+
 .pcaBar{
   fill: rgb(0,0,0);
 }
@@ -123,7 +156,19 @@ form {
 
 <body>
 
-<canvas id="c" width="600px" height = "500px" style="margin-left: 100px;"></canvas>
+<div id = "blockDIV_0" class = "highlight0 blockingDIV blockingDIV_0">
+  loading potential (values)...
+</div>
+<div id = "blockDIV_1" class = "highlight1 blockingDIV blockingDIV_1">
+  loading potential (values)...
+</div>
+<div id = "blockDIV_2" class = "highlight2 blockingDIV blockingDIV_2">
+  loading potential (values)...
+</div>
+
+<canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
+
+
 
 
 
@@ -243,6 +288,7 @@ var margin = {top: 10, right: 20, bottom: 20, left: 100},
 
 
 var allPotentialFields = {};
+var allColors = {};
 
 
 
@@ -327,8 +373,6 @@ d3.csv(positionFile, function(error, dataPos) {
   });
 
 
-  //TODO load all runs and set color from potential values - greyscale
-  // then create d3 color scales and make global sclae then paint each point
 
   var sizes = new Float32Array(particles);
   for(var i = 0; i < particles; i++) sizes[i] = 1;
@@ -376,30 +420,54 @@ d3.csv(positionFile, function(error, dataPos) {
 // http://stackoverflow.com/questions/6338217/get-a-css-value-with-javascript
 
 function getStyleRuleValue(style, selector) {
-var selector_compare=selector.toLowerCase();
-var selector_compare2= selector_compare.substr(0,1)==='.' ?  selector_compare.substr(1) : '.'+selector_compare;
+  var selector_compare=selector.toLowerCase();
+  var selector_compare2= selector_compare.substr(0,1)==='.' ?  selector_compare.substr(1) : '.'+selector_compare;
 
-for (var i = 0; i < document.styleSheets.length; i++) {
-    var mysheet = document.styleSheets[i];
-    var myrules = mysheet.cssRules ? mysheet.cssRules : mysheet.rules;
-    for (var j = 0; j < myrules.length; j++) {
-        if (myrules[j].selectorText) {
-            var check = myrules[j].selectorText.toLowerCase();
-            switch (check) {
-                case selector_compare  :
-                case selector_compare2 : return myrules[j].style[style];
-            }
-        }
+  for (var i = 0; i < document.styleSheets.length; i++) {
+      var mysheet = document.styleSheets[i];
+      var myrules = mysheet.cssRules ? mysheet.cssRules : mysheet.rules;
+      for (var j = 0; j < myrules.length; j++) {
+          if (myrules[j].selectorText) {
+              var check = myrules[j].selectorText.toLowerCase();
+              switch (check) {
+                  case selector_compare  :
+                  case selector_compare2 : return myrules[j].style[style];
+              }
+          }
+      }
+
     }
-
-}
 }
 
+var minPotentialValues = -15;
+var maxPotentialValues = 20;
 
 
+var colorScales = {};
+colorScales.blackWhite = ["black", "white"];
+colorScales.puOr11 = ['#7f3b08', '#b35806', '#e08214', '#fdb863', '#fee0b6', '#f7f7f7', '#d8daeb', '#b2abd2', '#8073ac', '#542788', '#2d004b'];
+colorScales.brownBlue = ["#8c510a", "#d8b365", "#f6e8c3", "#f5f5f5", "#c7eae5", "#5ab4ac", "#01665e"];
+var colorScalePotentialValues = d3.scale.linear()
+    //.domain([-2, 2])
+    .domain([minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues])
+    .range(colorScales.puOr11);
 
+//https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
 
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
 
 
 
@@ -431,7 +499,23 @@ var stack = d3.layout.stack()
     .out(function(d, y0) { d.valueOffset = y0; });
 
 
+var blockCanvas = function (curHighlight){
 
+  d3.select("#blockDIV_"+curHighlight)
+  .style("z-index", "30");
+
+  return;
+}
+
+var unblockAllCanvas = function (){
+
+  for (var i = 0; i< numImages; i++){
+    d3.select("#blockDIV_"+i)
+    .style("z-index","10");
+  }
+
+  return;
+}
 
 
 var setImage = function (curHighlight, curRun, renderer) {
@@ -444,55 +528,185 @@ var setImage = function (curHighlight, curRun, renderer) {
 
   d3.select("#image" + curHighlight)
         .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
+}
 
-  
-  for (var i=0; i< numImages; i++){
-    redraw(i, highlightImages[i], renderer);
+var getPotentialData = function(curHighlight, curRun, renderer, colors){
+
+  if (curHighlight >= numImages){
+    drawNow(renderer, colors, highlightImages);
+    unblockAllCanvas();
+    return;
   }
 
+  if(allColors[curRun.toString()]){
+    console.log("already have data "+ curHighlight + " run " + curRun);
+    getPotentialData(curHighlight+1, highlightImages[curHighlight +1], renderer, colors);
+  }else{
 
+    blockCanvas(curHighlight);
+    console.log("fetching data " +curHighlight + " run " + curRun);
+    d3.text('data/potentialFields/datatset_'+dataset+'/dataset_'+dataset+'_run'+curRun+'.txt', function(text) {
+
+
+        var data = d3.csv.parseRows(text).map(function(row) {
+          return row.map(function(value) {
+            return +value;
+          });
+        });
+
+
+        var potentialValues = [].concat.apply([], data);
+        allPotentialFields[curRun.toString()] = potentialValues;
+
+        allColors[curRun.toString()]={};
+
+        allColors[curRun.toString()].data=[];
+
+        
+        for (var i=0; i< numVertices; i++){
+          allColors[curRun.toString()].data[i] = potentialValues[i];
+        };
+
+        getPotentialData(curHighlight+1, highlightImages[curHighlight +1], renderer, colors);
+
+    });
+  }
+}
+
+
+
+var drawNow = function(renderer, colors) {
+
+  renderer.enableScissorTest( true );
+  for (var i=0; i< numImages ;i++){
+
+      var rgb = {};
+      for (var c=0; c< numVertices; c++){
+        rgb = hexToRgb(colorScalePotentialValues(allColors[highlightImages[i].toString()].data[c]));
+        colors[c*3+0] = rgb.r/255;//allColors[highlightImages[i].toString()].data[c*3 + 0];
+        colors[c*3+1] = rgb.g/255;//allColors[highlightImages[i].toString()].data[c*3 + 1];
+        colors[c*3+2] = rgb.b/255;//allColors[highlightImages[i].toString()].data[c*3 + 2];
+      };
+
+      // set the viewport
+      var width  = 250;//rect.right - rect.left;
+      var height = 200;//rect.bottom - rect.top;
+      var left   = (renderer.domElement.clientWidth/numImages) * i;//rect.left;
+      var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
+
+      //camera.aspect = width / height;
+      //     camera.updateProjectionMatrix();
+//renderer.setRenderTarget( null );
+      renderer.setViewport( left, bottom, width, height );
+      renderer.setScissor( left, bottom, width, height );
+      renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
+      renderer.clear()
+      renderer.setClearColor(clearColorBackground);
+
+//renderer.setRenderTarget( null );
+      renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+      renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+
+      colBuf.needsUpdate = true;
+      renderer.render( scene, camera );
+  }
+  renderer.enableScissorTest( false );
 }
 
 
 var redraw = function(curHighlight, curRun, renderer){
 
 
-    renderer.enableScissorTest( true );
-    // set the viewport
-    var width  = 250;//rect.right - rect.left;
-    var height = 200;//rect.bottom - rect.top;
-    var left   = (renderer.domElement.clientWidth/numImages) * curHighlight;//rect.left;
-    var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
-
-    //camera.aspect = width / height;
-    //     camera.updateProjectionMatrix();
-    renderer.setViewport( left, bottom, width, height );
-    renderer.setScissor( left, bottom, width, height );
-    renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+curHighlight));
-    renderer.clear()
-    renderer.setClearColor(clearColorBackground);
+  if(curHighlight >= numImages)
+    return;
 
 
-    renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-    renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+  console.log(allPotentialFields[curRun.toString()])
 
 
-    setColbuf(curHighlight,curRun);
-    colBuf.needsUpdate = true;
-    renderer.render( scene, camera );
-    
-    renderer.enableScissorTest( false );
+    d3.text('data/potentialFields/datatset_'+dataset+'/dataset_'+dataset+'_run'+curRun+'.txt', function(text) {
 
 
+      var data = d3.csv.parseRows(text).map(function(row) {
+        return row.map(function(value) {
+          return +value;
+        });
+      });
+
+
+      var potentialValues = [].concat.apply([], data);
+      
+
+      /* normalize 0 to 1
+      for (var p=0; p<potentialValues.length; p++){
+          potentialValues[p] = (potentialValues[p] - minPotentialValues) /(maxPotentialValues - minPotentialValues);
+      }*/
+
+      allPotentialFields[curRun.toString()] = [];
+      allPotentialFields[curRun.toString()].data = potentialValues;
+
+      for (var i=0; i< numVertices; i++){
+        colors[i*3 + 0] = 0;// allPotentialFields[curRun.toString()].data[i],
+        colors[i*3 + 1] = 0;//allPotentialFields[curRun.toString()].data[i],
+        colors[i*3 + 2] = 0;//allPotentialFields[curRun.toString()].data[i];
+        colors[i*3 + parseInt(curHighlight)] = potentialValues[i];//allPotentialFields[curRun.toString()].data[i];
+      };
+
+
+
+
+
+      renderer.enableScissorTest( true );
+      
+      
+      // set the viewport
+      var width  = 250;//rect.right - rect.left;
+      var height = 200;//rect.bottom - rect.top;
+      var left   = (renderer.domElement.clientWidth/numImages) * curHighlight;//rect.left;
+      var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
+
+      //camera.aspect = width / height;
+      //     camera.updateProjectionMatrix();
+      renderer.setViewport( left, bottom, width, height );
+      renderer.setScissor( left, bottom, width, height );
+      renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+curHighlight));
+      //renderer.clear()
+      renderer.setClearColor(clearColorBackground);
+
+
+      renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+      renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+
+      colBuf.needsUpdate = true;
+      renderer.render( scene, camera );
+
+
+
+/*
+left   = (renderer.domElement.clientWidth/numImages) * (curHighlight+1);
+renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+renderer.render( scene, camera );
+
+left   = (renderer.domElement.clientWidth/numImages) * (curHighlight+2);
+renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+renderer.render( scene, camera );
+*/
+
+
+//renderer.enableScissorTest( false );
+      redraw(curHighlight+1, highlightImages[curHighlight+1],renderer);
+
+    });
 }
 
+function getMaxOfArray(numArray) {
+  return Math.max.apply(null, numArray);
+}
 
-var setColbuf = function(curHighlight, curRun){
-
-  //colors = allPotentialFields.curRun.data;
-  for (var i=0; i< numVertices; i++){
-    colors[i*3 + curHighlight] = Math.random();
-  };
+function getMinOfArray(numArray) {
+  return Math.min.apply(null, numArray);
 }
 
 
@@ -511,7 +725,7 @@ var colorClass = function(d, runID){
   return cssclass;
 };
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("body").insert("svg","div")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
 
@@ -541,6 +755,8 @@ function highlightOFF(runID){
         .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
   }
 }
+
+
 
 
 
@@ -648,6 +864,8 @@ d3.csv(csvFile[dataset], function(error, data) {
       .on('mouseover', function(d) {highlightON(d.runID)})
       .on('mouseout', function(d) {highlightOFF(d.runID)})
       .on("click", function(d,i) {
+        highlightImages[activeHighlight] = i;
+        getPotentialData(0,highlightImages[0], renderer, colors, highlightImages);
         setImage(activeHighlight, i, renderer);
       });
 
