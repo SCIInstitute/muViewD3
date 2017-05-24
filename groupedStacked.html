@@ -272,7 +272,7 @@ var dataset = 3;
 
 
 
-
+var showImages = false;
 var activeHighlight = 0;
 var numImages = 3;
 var numRuns=0;
@@ -285,6 +285,12 @@ var margin = {top: 10, right: 20, bottom: 20, left: 100},
     marginOverview = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
     marginImages = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
     heightOverview = 500 - marginOverview.top - marginOverview.bottom;
+
+if(showImages)
+  height = 750 - margin.top - margin.bottom;
+else
+  height = 550 - margin.top - margin.bottom;
+
 
 
 var allPotentialFields = {};
@@ -316,6 +322,29 @@ camera.position.z = 500;
 
 var canvas = document.getElementById( "c" );
 
+
+
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+canvas.addEventListener('click', function(evt) {
+        var mousePos = getMousePos(canvas, evt);
+
+        var selectedImage=0;
+        if(mousePos.x/this.width < 0.3){
+          selectedImage = 0;
+        }else if(mousePos.x/this.width < 0.6 && mousePos.x/this.width > 0.33){
+          selectedImage = 1;
+        }else if(mousePos.x/this.width < 1 && mousePos.x/this.width > 0.66){
+          selectedImage = 2;
+        }
+        activeHighlight = selectedImage;
+      }, false);
 // geometry = new THREE.BoxGeometry( 200, 200, 200 )
 // material = new THREE.MeshBasicMaterial({color: 0xff0000})
 // mesh = new THREE.Mesh(geometry, material)
@@ -396,6 +425,10 @@ d3.csv(positionFile, function(error, dataPos) {
 
 
 
+
+
+  //load and show initial data
+  getPotentialData(0,highlightImages[0], renderer, colors, highlightImages);
 
 
 
@@ -526,8 +559,10 @@ var setImage = function (curHighlight, curRun, renderer) {
   d3.selectAll(".bar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
   d3.selectAll(".bar"+curRun).classed("highlight"+curHighlight, true);
 
-  d3.select("#image" + curHighlight)
-        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
+  if(showImages){
+    d3.select("#image" + curHighlight)
+      .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+curRun +".png");
+  }
 }
 
 var getPotentialData = function(curHighlight, curRun, renderer, colors){
@@ -614,93 +649,6 @@ var drawNow = function(renderer, colors) {
 }
 
 
-var redraw = function(curHighlight, curRun, renderer){
-
-
-  if(curHighlight >= numImages)
-    return;
-
-
-  console.log(allPotentialFields[curRun.toString()])
-
-
-    d3.text('data/potentialFields/datatset_'+dataset+'/dataset_'+dataset+'_run'+curRun+'.txt', function(text) {
-
-
-      var data = d3.csv.parseRows(text).map(function(row) {
-        return row.map(function(value) {
-          return +value;
-        });
-      });
-
-
-      var potentialValues = [].concat.apply([], data);
-      
-
-      /* normalize 0 to 1
-      for (var p=0; p<potentialValues.length; p++){
-          potentialValues[p] = (potentialValues[p] - minPotentialValues) /(maxPotentialValues - minPotentialValues);
-      }*/
-
-      allPotentialFields[curRun.toString()] = [];
-      allPotentialFields[curRun.toString()].data = potentialValues;
-
-      for (var i=0; i< numVertices; i++){
-        colors[i*3 + 0] = 0;// allPotentialFields[curRun.toString()].data[i],
-        colors[i*3 + 1] = 0;//allPotentialFields[curRun.toString()].data[i],
-        colors[i*3 + 2] = 0;//allPotentialFields[curRun.toString()].data[i];
-        colors[i*3 + parseInt(curHighlight)] = potentialValues[i];//allPotentialFields[curRun.toString()].data[i];
-      };
-
-
-
-
-
-      renderer.enableScissorTest( true );
-      
-      
-      // set the viewport
-      var width  = 250;//rect.right - rect.left;
-      var height = 200;//rect.bottom - rect.top;
-      var left   = (renderer.domElement.clientWidth/numImages) * curHighlight;//rect.left;
-      var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
-
-      //camera.aspect = width / height;
-      //     camera.updateProjectionMatrix();
-      renderer.setViewport( left, bottom, width, height );
-      renderer.setScissor( left, bottom, width, height );
-      renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+curHighlight));
-      //renderer.clear()
-      renderer.setClearColor(clearColorBackground);
-
-
-      renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-      renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
-
-      colBuf.needsUpdate = true;
-      renderer.render( scene, camera );
-
-
-
-/*
-left   = (renderer.domElement.clientWidth/numImages) * (curHighlight+1);
-renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
-renderer.render( scene, camera );
-
-left   = (renderer.domElement.clientWidth/numImages) * (curHighlight+2);
-renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
-renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
-renderer.render( scene, camera );
-*/
-
-
-//renderer.enableScissorTest( false );
-      redraw(curHighlight+1, highlightImages[curHighlight+1],renderer);
-
-    });
-}
-
 function getMaxOfArray(numArray) {
   return Math.max.apply(null, numArray);
 }
@@ -741,8 +689,11 @@ var images = svg.append("g")
 function highlightON(runID){
   d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, true);
   
-  d3.select("#image" + activeHighlight)
+  if(showImages){
+      d3.select("#image" + activeHighlight)
         .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+runID +".png");
+
+  }
 }
 
 function highlightOFF(runID){
@@ -751,8 +702,10 @@ function highlightOFF(runID){
     return;
   else{
     d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
-    d3.select("#image" + activeHighlight)
-        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
+    if(showImages){
+      d3.select("#image" + activeHighlight)
+          .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
+    }
   }
 }
 
@@ -793,34 +746,35 @@ d3.csv(csvFile[dataset], function(error, data) {
                 numRuns++;
         });
 
-        for (var i = 0; i < numImages; i++) {
+        if (showImages){
+
+          for (var i = 0; i < numImages; i++) {
+              var r = images
+                .append("rect")
+                  .attr("class", function(){return "highlight" + i;})
+                  .attr("width", "250")
+                  .attr("height", "190")
+                  .attr("x", function(){return i*250+50*i;})
+                  .attr("y","100");
 
 
-            var r = images
-              .append("rect")
-                .attr("class", function(){return "highlight" + i;})
-                .attr("width", "250")
-                .attr("height", "190")
-                .attr("x", function(){return i*250+50*i;})
-                .attr("y","100");
+                  //var context = canvas.node().getContext("2d");
 
-
-                //var context = canvas.node().getContext("2d");
-
-              images.append("image")
-                .attr("id", "image" + i)
-                .attr("height", "230")
-                .attr("width", "230")
-                .attr("x", function(){return i*250+50*i +10;})
-                .attr("y","80")
-                .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
-                .on("click", function(){
-                  activeHighlight = this.getAttribute("id").slice(-1);
-                });
-                  highlightImages[i]=Math.floor((numRuns/numImages)*i+1);
-
-
-             
+                images.append("image")
+                  .attr("id", "image" + i)
+                  .attr("height", "230")
+                  .attr("width", "230")
+                  .attr("x", function(){return i*250+50*i +10;})
+                  .attr("y","80")
+                  .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
+                  .on("click", function(){
+                    activeHighlight = this.getAttribute("id").slice(-1);
+                  });
+          }
+        }else{
+          for (var i = 0; i < numImages; i++) {
+            highlightImages[i]=Math.floor((numRuns/numImages)*i+1);
+          }
         }
 
 
@@ -916,9 +870,6 @@ d3.csv(csvFile[dataset], function(error, data) {
       .text(function(d){return d.key;})
       .on("click", function(d){sort(d.key);return d;});
   }
-
-
-
 });
 
 
