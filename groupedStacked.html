@@ -118,21 +118,37 @@ form {
 
 <script type="x-shader/x-vertex" id="vertexshader">
   attribute float size;
-  attribute vec3 color;
+  attribute vec3 color0;
+  attribute vec3 color1;
+  attribute vec3 color2;
   uniform float pointSize;
-  //uniform vec3 color;
+
   uniform float alpha;
   varying vec4 vColor;
   varying vec2 myPosition;
   varying float mySize;
   varying vec3 myColor;
+
+  uniform int colBufToUse;
+
   void main() {
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_PointSize = size;
     mySize = size;
-    myColor = color;
     gl_Position = projectionMatrix * mvPosition;
-    vColor = vec4(color, alpha);//vec4(color, alpha);
+
+    if(colBufToUse == 0){
+      myColor = color0;
+      vColor = vec4(color0, alpha);
+    }
+    if(colBufToUse == 1){
+      myColor = color1;
+      vColor = vec4(color1, alpha);
+    } 
+    if(colBufToUse == 2){
+      myColor = color2;
+      vColor = vec4(color2, alpha);
+    }
   }
 </script>
 
@@ -210,15 +226,11 @@ form {
 <!-- LIBRARIES -->
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
 <script src="3.5.3_d3.min.js" charset="utf-8"></script>
+<!-- from https://cdn.rawgit.com/mrdoob/three.js/master/build/three.js -->
+<script src="three.js"></script>
 
-<!-- from https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js -->
-<script src="three.min.js" charset="utf-8"></script>
-
-
-
-
-
-
+<!-- from https://raw.githubusercontent.com/traversc/OrbitControls-orthographic_camera_fix/master/OrbitControls.js-->
+<script src="threeOrbitControls.js"></script>
 
 
 
@@ -296,15 +308,18 @@ else
 
 var allPotentialFields = {};
 var allColors = {};
+var colBufs = {};
 
 
 
-
+for (var i=0; i<numImages;i++){
+  colBufs[i.toString()] = {};
+}
 
 
 
 var scene, camera, renderer;
-var colBuf;
+var controls;
 var viewports = [];
 var geometry, material, mesh;
 var clearColorBackground = 0xE0E0E0;
@@ -315,7 +330,9 @@ var heightCanvas = 230;//window.innerHeight
 
 scene = new THREE.Scene()
 //camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
-camera = new THREE.OrthographicCamera(120, -30, 100, -10, 0.1, 100000);
+camera = new THREE.OrthographicCamera(70, -70, 70, -70, 0.1, 100000);
+//camera = new THREE.PerspectiveCamera(45,widthCanvas / heightCanvas, 0.1, 100000);
+camera.zoom = 4;
 scene.add(camera)
 //camera.position.x = -80;
 //camera.position.y = 700;
@@ -351,46 +368,35 @@ canvas.addEventListener('click', function(evt) {
 // mesh = new THREE.Mesh(geometry, material)
 // scene.add(mesh)
 
-function uniforms(opts) {
-  opts = opts || {}
-  return {
+
+var myUniforms = {
     alpha: { type: 'f', value: 0.7 },
     pointSize: { type: 'f', value: 10 },
-    shouldResize: { type: '1i', value: opts.shouldResize ? 1 : 0 }
+    shouldResize: { type: '1i', value: 1},
+    colBufToUse: {type: 'f', value: 0}
   }
-}
-
-
-var attributes = {
-  size: { type: 'f', value: [] },
-  color: { type: 'c', value: [] }
-}
 
 var cloudMat = new THREE.ShaderMaterial({
-    uniforms:       uniforms(),
-    attributes:     attributes,
+    uniforms:       myUniforms,
     vertexShader:   d3.select('#vertexshader').node().textContent,
     fragmentShader: d3.select('#fragmentshader').node().textContent,
     transparent:    true,
-    setDepthTest: false,
-    // blending: THREE.CustomBlending,
-    // blendEquation: THREE.AddEquation,
-    // blendSrc: THREE.SrcAlphaSaturate,
-    // blendDst: THREE.OneMinusSrcAlphaFactor,
 })
 
 var cloudGeom = new THREE.BufferGeometry();
 var positionFile = 'data/potentialFields/pointPosition.csv';
 var particles;
 var positions;
-var colors;
 
 
 //var positions = [];
 d3.csv(positionFile, function(error, dataPos) {
   particles = dataPos.length;
   positions = new Float32Array(particles * 3);
-  colors = new Float32Array(particles * 3);
+
+  for(var img =0; img< numImages; img++){
+    colBufs[img.toString()].colors = new Float32Array(particles * 3);
+  }
 
   dataPos.forEach(function(d,i){
     d.x = +d.x;
@@ -398,8 +404,17 @@ d3.csv(positionFile, function(error, dataPos) {
     d.z = +d.z;
 
     positions[i*3] = d.x, positions[i*3 + 1] = d.y, positions[i*3 + 2] = d.z;
-    colors[i*3] = 0.5, colors[i*3 + 1] = 0.2, colors[i*3 + 2] = 0.4;
+    //colors[i*3] = 0.5, colors[i*3 + 1] = 0.2, colors[i*3 + 2] = 0.4;
     numVertices ++;
+
+    for(var img=0;img<numImages;img++){
+      colBufs[img.toString()].colors[i*3 + 0] = 0;//0.2;
+      colBufs[img.toString()].colors[i*3 + 1] = 0;//0.4;
+      colBufs[img.toString()].colors[i*3 + 2] = 0;//0.5;
+
+
+      colBufs[img.toString()].colors[i*3 + img] = 0.8;
+    }
   });
 
 
@@ -408,47 +423,56 @@ d3.csv(positionFile, function(error, dataPos) {
   for(var i = 0; i < particles; i++) sizes[i] = 1;
 
   var posBuff = new THREE.BufferAttribute(positions, 3);
-  colBuf = new THREE.BufferAttribute(colors, 3);
+
+  for(var img=0;img<numImages;img++){
+    colBufs[img.toString()].colBuf = new THREE.BufferAttribute(colBufs[img.toString()].colors, 3);
+    cloudGeom.addAttribute('color'+img, colBufs[img.toString()].colBuf);
+  }
   cloudGeom.addAttribute('position', posBuff)
   cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
-  cloudGeom.addAttribute('color', colBuf)
   cloudGeom.computeBoundingSphere()
 
-  var pointCloud = new THREE.PointCloud(cloudGeom, cloudMat)
+  var offset = cloudGeom.boundingSphere.center;
+  
+
+  var pointCloud = new THREE.Points(cloudGeom, cloudMat);
+
+  pointCloud.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( -offset.x, -offset.y, -offset.z ) );
+  //pointCloud.position.copy( cloudGeom.centroid );
+
+
   scene.add(pointCloud);
 
 
   renderer = new THREE.WebGLRenderer({alpha: true, canvas: canvas, antialias: true})
   renderer.setSize(widthCanvas, heightCanvas);
   renderer.setClearColor(clearColorBackground );
-  document.body.appendChild(renderer.domElement)
-
-
+  document.body.appendChild(renderer.domElement);
+  controls = new THREE.OrbitControls (camera, renderer.domElement);
 
 
 
 
   //load and show initial data
-  getPotentialData(0,highlightImages[0], renderer, colors, highlightImages);
+  getPotentialData(0,highlightImages[0]);
 
 
 
-// based on:http://stackoverflow.com/questions/30608723/is-it-possible-to-enable-unbounded-number-of-renderers-in-three-js/30633132#30633132
-  
-
-
+  animate();
 
 });
 
 
+var animate = function(){
+  requestAnimationFrame( animate );
 
-
-
-
-
-
-
-
+  if(renderer){
+    drawNow();
+  }else{
+    console.log('not ready to draw yet... wait a little')
+    return;
+  }
+}
 
 
 // http://stackoverflow.com/questions/6338217/get-a-css-value-with-javascript
@@ -567,7 +591,7 @@ var unblockAllCanvas = function (){
 }
 
 
-var setImage = function (curHighlight, curRun, renderer) {
+var setImage = function (curHighlight, curRun) {
 
   highlightImages[curHighlight] = curRun;
   d3.selectAll(".pcaBar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
@@ -581,17 +605,15 @@ var setImage = function (curHighlight, curRun, renderer) {
   }
 }
 
-var getPotentialData = function(curHighlight, curRun, renderer, colors){
+var getPotentialData = function(curHighlight, curRun){
 
   if (curHighlight >= numImages){
-    drawNow(renderer, colors, highlightImages);
     unblockAllCanvas();
     return;
   }
 
   if(allColors[curRun.toString()]){
-    console.log("already have data "+ curHighlight + " run " + curRun);
-    getPotentialData(curHighlight+1, highlightImages[curHighlight +1], renderer, colors);
+    getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
   }else{
 
     blockCanvas(curHighlight);
@@ -618,7 +640,21 @@ var getPotentialData = function(curHighlight, curRun, renderer, colors){
           allColors[curRun.toString()].data[i] = potentialValues[i];
         };
 
-        getPotentialData(curHighlight+1, highlightImages[curHighlight +1], renderer, colors);
+
+
+        var rgb = {};
+        for (var c=0; c< numVertices; c++){
+          rgb = hexToRgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
+          colBufs[curHighlight.toString()].colors[c*3+0] = rgb.r/255;
+          colBufs[curHighlight.toString()].colors[c*3+1] = rgb.g/255;
+          colBufs[curHighlight.toString()].colors[c*3+2] = rgb.b/255;
+        };
+
+
+        colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
+        
+
+        getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
 
     });
   }
@@ -626,18 +662,16 @@ var getPotentialData = function(curHighlight, curRun, renderer, colors){
 
 
 
-var drawNow = function(renderer, colors) {
+var drawNow = function() {
 
-  renderer.enableScissorTest( true );
+  renderer.setScissorTest( true );
   for (var i=0; i< numImages ;i++){
 
-      var rgb = {};
-      for (var c=0; c< numVertices; c++){
-        rgb = hexToRgb(colorScalePotentialValues(allColors[highlightImages[i].toString()].data[c]));
-        colors[c*3+0] = rgb.r/255;//allColors[highlightImages[i].toString()].data[c*3 + 0];
-        colors[c*3+1] = rgb.g/255;//allColors[highlightImages[i].toString()].data[c*3 + 1];
-        colors[c*3+2] = rgb.b/255;//allColors[highlightImages[i].toString()].data[c*3 + 2];
-      };
+
+      myUniforms.colBufToUse.value = i; // Updates this new value
+      myUniforms.colBufToUse.needsUpdate = true;
+
+
 
       // set the viewport
       var width  = 250;//rect.right - rect.left;
@@ -658,10 +692,10 @@ var drawNow = function(renderer, colors) {
       renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
       renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
 
-      colBuf.needsUpdate = true;
+      //colBuf.needsUpdate = true;
       renderer.render( scene, camera );
   }
-  renderer.enableScissorTest( false );
+  renderer.setScissorTest( false );
 }
 
 
@@ -835,8 +869,8 @@ d3.csv(csvFile[dataset], function(error, data) {
       .on('mouseout', function(d) {highlightOFF(d.runID)})
       .on("click", function(d,i) {
         highlightImages[activeHighlight] = i;
-        getPotentialData(0,highlightImages[0], renderer, colors, highlightImages);
-        setImage(activeHighlight, i, renderer);
+        getPotentialData(0,highlightImages[0]);
+        setImage(activeHighlight, i);
       });
 
 
@@ -888,7 +922,7 @@ d3.csv(csvFile[dataset], function(error, data) {
   }
 
 
-  /// Append color legend
+  /// Append color legend based on https://bl.ocks.org/starcalibre/6cccfa843ed254aa0a0d
 
   var legendWidth = 50;
   var legendHeight =  195;
