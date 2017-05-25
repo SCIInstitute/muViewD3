@@ -34,6 +34,10 @@ form {
   top: 10px;
 }
 
+#selectColorScale{
+  margin-left: 900px;
+  position: absolute;
+}
 
 .highlight0{
   fill: rgb(127,201,127) !important;
@@ -185,6 +189,8 @@ form {
 
 <canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
 
+<select id="selectColorScale">
+</select>
 
 
 
@@ -231,6 +237,8 @@ form {
 
 <!-- from https://raw.githubusercontent.com/traversc/OrbitControls-orthographic_camera_fix/master/OrbitControls.js-->
 <script src="threeOrbitControls.js"></script>
+
+<script src="colorScales.js"></script>
 
 
 
@@ -498,22 +506,20 @@ function getStyleRuleValue(style, selector) {
 }
 
 var minPotentialValues = -15;
-var maxPotentialValues = 20;
+var maxPotentialValues = 15;//20;
 
 
 var colorAxisDomain = [minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues];
-var colorScales = {};
-colorScales.blackWhite = ["black", "white"];
-colorScales.puOr11 = ['#7f3b08', '#b35806', '#e08214', '#fdb863', '#fee0b6', '#f7f7f7', '#d8daeb', '#b2abd2', '#8073ac', '#542788', '#2d004b'];
-colorScales.brownBlue = ["#8c510a", "#d8b365", "#f6e8c3", "#f5f5f5", "#c7eae5", "#5ab4ac", "#01665e"];
+
 var colorScalePotentialValues = d3.scale.linear()
-    //.domain([-2, 2])
     .domain(colorAxisDomain)
-    .range(colorScales.puOr11);
+    .range(colorScales.redToBlueFlip);
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
 function hexToRgb(hex) {
+
+
     // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
     var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     hex = hex.replace(shorthandRegex, function(m, r, g, b) {
@@ -660,6 +666,92 @@ var getPotentialData = function(curHighlight, curRun){
   }
 }
 
+
+var changeColorScale = function(){
+
+
+
+  var select = document.getElementById('selectColorScale');
+  var selectedColors = colorScales[select.options[select.selectedIndex].value];
+
+  /// Append color legend based on https://bl.ocks.org/starcalibre/6cccfa843ed254aa0a0d
+
+
+  var legendWidth = 50;
+  var legendHeight =  195;
+
+  main.select('#gradient').remove();
+  main.select('#colorAxis').remove();
+
+  // append gradient bar
+  var gradient = main.append('defs')
+      .append('linearGradient')
+      .attr('id', 'gradient')
+      .attr('x1', '0%') // bottom
+      .attr('y1', '100%')
+      .attr('x2', '0%') // to top
+      .attr('y2', '0%')
+      .attr('spreadMethod', 'pad');
+
+
+  colorScalePotentialValues = d3.scale.linear()
+    .domain(colorAxisDomain)
+    .range(selectedColors);
+
+  // programatically generate the gradient for the legend
+  // this creates an array of [pct, colour] pairs as stop
+  // values for legend
+  var pct = linspace(0, 100, selectedColors.length).map(function(d) {
+      return Math.round(d) + '%';
+  });
+
+  var colourPct = d3.zip(pct, selectedColors);
+
+  colourPct.forEach(function(d) {
+      gradient.append('stop')
+          .attr('offset', d[0])
+          .attr('stop-color', d[1])
+          .attr('stop-opacity', 1);
+  });
+
+  main.append('rect')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr("transform", "translate(780,525)")
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#gradient)');
+
+
+    // create a scale and axis for the legend
+  var legendScale = d3.scale.linear()
+      .domain([minPotentialValues, maxPotentialValues])
+      .range([legendHeight, 0]);
+
+  var legendAxis = d3.svg.axis()
+      .scale(legendScale)
+      .orient("right")
+      .tickValues(d3.range(minPotentialValues, maxPotentialValues, 5))
+      .tickFormat(d3.format("d"));
+
+  main.append("g")
+      .attr("id", "colorAxis")
+      .attr("class", "legend axis")
+      .attr("transform", "translate(" + (780+legendWidth) + ", 525)")
+      .call(legendAxis);
+
+
+  for (var img=0;img<numImages;img++){
+    var rgb = {};
+    for (var c=0; c< numVertices; c++){
+      rgb = hexToRgb(colorScalePotentialValues(allColors[highlightImages[img].toString()].data[c]));
+      colBufs[img.toString()].colors[c*3+0] = rgb.r/255;
+      colBufs[img.toString()].colors[c*3+1] = rgb.g/255;
+      colBufs[img.toString()].colors[c*3+2] = rgb.b/255;
+    };
+    colBufs[img.toString()].colBuf.needsUpdate = true;
+  }
+}
 
 
 var drawNow = function() {
@@ -922,64 +1014,18 @@ d3.csv(csvFile[dataset], function(error, data) {
   }
 
 
-  /// Append color legend based on https://bl.ocks.org/starcalibre/6cccfa843ed254aa0a0d
 
-  var legendWidth = 50;
-  var legendHeight =  195;
+  for(var key in colorScales){
 
-  // append gradient bar
-  var gradient = main.append('defs')
-      .append('linearGradient')
-      .attr('id', 'gradient')
-      .attr('x1', '0%') // bottom
-      .attr('y1', '100%')
-      .attr('x2', '0%') // to top
-      .attr('y2', '0%')
-      .attr('spreadMethod', 'pad');
+    d3.select('#selectColorScale')
+      .append('option')
+      .attr("value", key)
+      .text(key);
+  }
+  d3.select('#selectColorScale')
+    .on('change', function(){ changeColorScale();});
 
-  // programatically generate the gradient for the legend
-  // this creates an array of [pct, colour] pairs as stop
-  // values for legend
-  var pct = linspace(0, 100, colorScales.puOr11.length).map(function(d) {
-      return Math.round(d) + '%';
-  });
-
-  //var colourPct = d3.zip(pct, colorScales.puOr11);
-  var colourPct = d3.zip(pct, colorScales.puOr11);
-
-  colourPct.forEach(function(d) {
-      gradient.append('stop')
-          .attr('offset', d[0])
-          .attr('stop-color', d[1])
-          .attr('stop-opacity', 1);
-  });
-
-  main.append('rect')
-      .attr('x1', 0)
-      .attr('y1', 0)
-      .attr("transform", "translate(780,525)")
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .style('fill', 'url(#gradient)');
-
-  // create a scale and axis for the legend
-  var legendScale = d3.scale.linear()
-      .domain([minPotentialValues, maxPotentialValues])
-      .range([legendHeight, 0]);
-
-  var legendAxis = d3.svg.axis()
-      .scale(legendScale)
-      .orient("right")
-      .tickValues(d3.range(minPotentialValues, maxPotentialValues, 10))
-      .tickFormat(d3.format("d"));
-
-  main.append("g")
-      .attr("class", "legend axis")
-      .attr("transform", "translate(" +(780+ legendWidth) + ", 525)")
-      .call(legendAxis);
-
-
-
+  changeColorScale();
 });
 
 
