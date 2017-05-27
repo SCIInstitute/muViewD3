@@ -35,7 +35,12 @@ form {
 }
 
 #selectColorScale{
-  margin-left: 900px;
+  margin-left: 830px;
+  position: absolute;
+}
+
+#revertColor{
+  margin-left: 940px;
   position: absolute;
 }
 
@@ -191,6 +196,7 @@ form {
 
 <select id="selectColorScale">
 </select>
+<input id="revertColor" type="checkbox">
 
 
 
@@ -611,6 +617,10 @@ var setImage = function (curHighlight, curRun) {
   }
 }
 
+var donothing = function() {
+
+}
+
 var getPotentialData = function(curHighlight, curRun){
 
   if (curHighlight >= numImages){
@@ -619,7 +629,12 @@ var getPotentialData = function(curHighlight, curRun){
   }
 
   if(allColors[curRun.toString()]){
-    getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
+    if(curHighlight == activeHighlight){
+      blockCanvas(curHighlight);
+      setTimeout(function(){ getPotentialData(curHighlight+1, highlightImages[curHighlight +1]); }, 500);
+    }else{
+      getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
+    }
   }else{
 
     blockCanvas(curHighlight);
@@ -671,8 +686,15 @@ var changeColorScale = function(){
 
 
 
+  var revert = document.getElementById('revertColor').value;
+
+
   var select = document.getElementById('selectColorScale');
   var selectedColors = colorScales[select.options[select.selectedIndex].value];
+
+  if(revert){
+    selectedColors = selectedColors.reverse();
+  }
 
   /// Append color legend based on https://bl.ocks.org/starcalibre/6cccfa843ed254aa0a0d
 
@@ -1023,6 +1045,9 @@ d3.csv(csvFile[dataset], function(error, data) {
       .text(key);
   }
   d3.select('#selectColorScale')
+    .on('change', function(){ changeColorScale();});
+
+  d3.select('#revertColor')
     .on('change', function(){ changeColorScale();});
 
   changeColorScale();
