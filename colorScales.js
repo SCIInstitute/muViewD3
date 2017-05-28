@@ -24,8 +24,3 @@ colorScales.RdGy = ['#67001f','#b2182b','#d6604d','#f4a582','#fddbc7','#ffffff',
 colorScales.RdYlBu = ['#a50026','#d73027','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'];
 colorScales.RdYlGn = ['#a50026','#d73027','#f46d43','#fdae61','#fee08b','#ffffbf','#d9ef8b','#a6d96a','#66bd63','#1a9850','#006837'];
 colorScales.Spectral = ['#9e0142','#d53e4f','#f46d43','#fdae61','#fee08b','#ffffbf','#e6f598','#abdda4','#66c2a5','#3288bd','#5e4fa2'];
-
-/*
-TODO:
-function to invert color scale
-*/
