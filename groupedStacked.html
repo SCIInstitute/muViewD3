@@ -10,7 +10,7 @@ body {
 }
 
 text {
-  font: 10px sans-serif;
+  font: 7px sans-serif;
 }
 
 .axis path {
@@ -26,6 +26,10 @@ text {
 .group-label {
   font-weight: bold;
   text-anchor: end;
+}
+
+.switchRunButton{
+  position: absolute;
 }
 
 form {
@@ -68,6 +72,10 @@ form {
   margin-top: -220px;
 }
 
+.myTip{
+  font-size: 8px;
+}
+
 .blockingDIV_0{
   background-color: rgb(127,201,127);
   margin-left: 100px;
@@ -89,6 +97,15 @@ form {
   position: absolute;
   margin-top:-250px;
 }
+
+.btnLeft{
+  margin-left: 180px;
+}
+
+.btnRight{
+  margin-left: 240px;
+}
+
 
 .pcaBar{
   fill: rgb(0,0,0);
@@ -177,7 +194,7 @@ form {
 <html>
 
 <head>
-<title>My Title</title>
+<title>muVIEW 2</title>
 </head>
 
 <body>
@@ -193,6 +210,16 @@ form {
 </div>
 
 <canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
+
+<button type="button" class="btnLeft highlight0 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight0 switchRunButton"> &gt; </button>
+
+<button type="button" class="btnLeft highlight1 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight1 switchRunButton"> &gt; </button>
+
+<button type="button" class="btnLeft highlight2 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight2 switchRunButton"> &gt; </button>
+
 
 <select id="selectColorScale">
 </select>
@@ -238,6 +265,9 @@ form {
 <!-- LIBRARIES -->
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
 <script src="3.5.3_d3.min.js" charset="utf-8"></script>
+<!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
+<script src="d3Tip.js" charset="utf-8"></script>
+
 <!-- from https://cdn.rawgit.com/mrdoob/three.js/master/build/three.js -->
 <script src="three.js"></script>
 
@@ -323,6 +353,11 @@ else
 var allPotentialFields = {};
 var allColors = {};
 var colBufs = {};
+
+
+var getAllPotentialData = true;
+
+
 
 
 
@@ -558,6 +593,13 @@ function linspace(start, end, n) {
 
 
 
+var tip = d3.tip()
+  .attr('class', 'd3-tip myTip')
+  .offset([35, -70])
+  .html(function(d) {
+    return "Run: " + d.runID;
+  })
+
 
 
 var y0 = d3.scale.ordinal()
@@ -603,6 +645,39 @@ var unblockAllCanvas = function (){
 }
 
 
+var getCurrentSorting = function(){
+  var bars = d3.selectAll(".bar");
+  var orderArray = [];
+
+  for(var i=0; i<numRuns;i++){
+    var filteredList = bars[0][i].className.baseVal.split(" bar");
+    orderArray[i] = parseInt(filteredList[filteredList.length-2]);
+  }
+
+  return orderArray;
+}
+
+
+var nextImage = function (d,i,el){
+
+
+  var curOrder = getCurrentSorting();
+  var oldIndex = curOrder.indexOf(highlightImages[Math.floor(i/2)]);
+
+
+  var left = d3.select(el).classed("btnLeft");
+
+  if(left){
+    newImageIndex = curOrder[d3.max([0,oldIndex-1])];
+  }else{
+    newImageIndex = curOrder[d3.min([numRuns-1,oldIndex +1])];
+  }
+
+  getPotentialData(0,newImageIndex);
+  setImage(Math.floor(i/2), newImageIndex);
+}
+
+
 var setImage = function (curHighlight, curRun) {
 
   highlightImages[curHighlight] = curRun;
@@ -617,9 +692,6 @@ var setImage = function (curHighlight, curRun) {
   }
 }
 
-var donothing = function() {
-
-}
 
 var getPotentialData = function(curHighlight, curRun){
 
@@ -630,7 +702,9 @@ var getPotentialData = function(curHighlight, curRun){
 
   if(allColors[curRun.toString()]){
     if(curHighlight == activeHighlight){
-      blockCanvas(curHighlight);
+      if(!getAllPotentialData){
+        blockCanvas(curHighlight);
+      }
       setTimeout(function(){ getPotentialData(curHighlight+1, highlightImages[curHighlight +1]); }, 500);
     }else{
       getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
@@ -841,8 +915,17 @@ var svg = d3.select("body").insert("svg","div")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
 
+d3.selectAll("button")
+  .attr("style", function(d,i) {
+    return "margin-top: " + (-10) + "px;"
+          +"margin-left: " + (i*100+150 + (i/2)* 50) + "px;";});
+
+
+
 var main = svg.append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.call(tip);
 
 var images = svg.append("g")
                     .attr("class", "images")
@@ -850,27 +933,30 @@ var images = svg.append("g")
 
 
 
-function highlightON(runID){
-  d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, true);
+function highlightON(d){
+  d3.selectAll(".bar" + d.runID).classed("highlight" + activeHighlight, true);
   
   if(showImages){
       d3.select("#image" + activeHighlight)
-        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+runID +".png");
+        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+d.runID +".png");
 
   }
+  tip.show(d);
 }
 
-function highlightOFF(runID){
+function highlightOFF(d){
 
-  if(runID == highlightImages[activeHighlight])
+  if(d.runID == highlightImages[activeHighlight])
     return;
   else{
-    d3.selectAll(".bar" + runID).classed("highlight" + activeHighlight, false);
+    d3.selectAll(".bar" + d.runID).classed("highlight" + activeHighlight, false);
     if(showImages){
       d3.select("#image" + activeHighlight)
           .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
     }
   }
+
+  tip.hide(d);
 }
 
 
@@ -879,11 +965,39 @@ function highlightOFF(runID){
 
 var csvFile=[];
 
-csvFile[0] = 'data/d4s1_9vals_pcaWeight.csv';
-csvFile[1] = 'data/d4s1_9vals_pcaWeight.csv';
-csvFile[2] = 'data/d4s2_41vals_pcaWeight.csv';
-csvFile[3] = 'data/d4s3_137vals_pcaWeight.csv';
-d3.csv(csvFile[dataset], function(error, data) {
+csvFile[0] = 'data/dataset_' + dataset + 'vals_pcaWeight.csv';
+//csvFile[1] = 'data/d4s1_9vals_pcaWeight.csv';
+//csvFile[2] = 'data/d4s2_41vals_pcaWeight.csv';
+//csvFile[3] = 'data/d4s3_137vals_pcaWeight.csv';
+csvFile[1] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_' + dataset + '_pcaWeight.csv';
+
+csvFile[2] = 'data/inputsPCA_12_2-8depths_100setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
+
+csvFile[3] = 'data/inputsPCA_12_depths_5setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
+
+csvFile[4] = 'data/inputsPCA_12_depths_50setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
+
+csvFile[5] = 'data/runPC_12_fBD_100samples_j2-10-62/runPC_12_2-10-62fBD_100setsPerSampledataset_' + dataset + '.csv';
+
+
+//H = how much each run belongs to each cluster
+csvFile[6] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k2dataset_' + dataset + '.csv';
+csvFile[7] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k3dataset_' + dataset + '.csv';
+csvFile[8] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k4dataset_' + dataset + '.csv';
+
+
+csvFile[9] = 'data/MedMeanStdMinMax/mean_med_std_min_maxdataset_' + dataset + '.csv';
+
+
+// Does not show clear clusters in Tsne space 
+// does not make a lot of sense!!
+/*
+csvFile[10] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNEdataset_3.csv'
+
+csvFile[11] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNE_distdataset_3.csv'
+*/
+
+d3.csv(csvFile[9], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
@@ -909,6 +1023,17 @@ d3.csv(csvFile[dataset], function(error, data) {
                 });
                 numRuns++;
         });
+
+        if (getAllPotentialData){
+          for (var i=0;i<numRuns;i++){
+            getPotentialData(0,i);
+          }
+//          d3.selectAll("button")
+  //        .on("click", function(d,i) {return nextImage(d,i,this);});
+        }
+        //tODO remove xxx
+          d3.selectAll("button")
+          .on("click", function(d,i) {return nextImage(d,i,this);});
 
         if (showImages){
 
@@ -955,8 +1080,7 @@ d3.csv(csvFile[dataset], function(error, data) {
   var  yAxisIndividual =[];
   columns.forEach(function(d,i){
     yIndividual[d] = d3.scale.linear();
-    yIndividual[d].domain([0,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
-
+    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
     yAxisIndividual[i] = d3.svg.axis()
       .scale(yIndividual[d])
       .orient("left")
@@ -979,8 +1103,10 @@ d3.csv(csvFile[dataset], function(error, data) {
       .attr("y", function(d) { return yIndividual[d.group](d.value); })
       .attr("width", x.rangeBand())
       .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })//
-      .on('mouseover', function(d) {highlightON(d.runID)})
-      .on('mouseout', function(d) {highlightOFF(d.runID)})
+//      .on('mouseover', tip.show)
+//      .on('mouseout', tip.hide)
+      .on('mouseover', function(d) {highlightON(d)})
+      .on('mouseout', function(d) {highlightOFF(d)})
       .on("click", function(d,i) {
         highlightImages[activeHighlight] = i;
         getPotentialData(0,highlightImages[0]);
