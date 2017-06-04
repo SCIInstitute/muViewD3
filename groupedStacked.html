@@ -64,12 +64,15 @@ form {
   width:250px;
   float: left;
   z-index: 10;
-  height: 200px;
+  height: 210px;
   position: absolute;
+  /*
+	center text to middle of div
   text-align: center;
   vertical-align: middle;
   line-height: 90px; 
-  margin-top: -220px;
+  */
+  margin-top: -240px;
 }
 
 .myTip{
@@ -200,13 +203,22 @@ form {
 <body>
 
 <div id = "blockDIV_0" class = "highlight0 blockingDIV blockingDIV_0">
+run:
+<p>
   loading potential (values)...
+</p>
 </div>
 <div id = "blockDIV_1" class = "highlight1 blockingDIV blockingDIV_1">
+run:
+<p>
   loading potential (values)...
+</p>
 </div>
 <div id = "blockDIV_2" class = "highlight2 blockingDIV blockingDIV_2">
+run:
+<p>
   loading potential (values)...
+</p>
 </div>
 
 <canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
@@ -355,7 +367,7 @@ var allColors = {};
 var colBufs = {};
 
 
-var getAllPotentialData = true;
+var getAllPotentialData = false;
 
 
 
@@ -473,13 +485,25 @@ d3.csv(positionFile, function(error, dataPos) {
 
   var posBuff = new THREE.BufferAttribute(positions, 3);
 
+
   for(var img=0;img<numImages;img++){
     colBufs[img.toString()].colBuf = new THREE.BufferAttribute(colBufs[img.toString()].colors, 3);
     cloudGeom.addAttribute('color'+img, colBufs[img.toString()].colBuf);
   }
-  cloudGeom.addAttribute('position', posBuff)
-  cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
-  cloudGeom.computeBoundingSphere()
+  cloudGeom.addAttribute('position', posBuff);
+  cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  cloudGeom.computeBoundingSphere();
+
+
+        if (getAllPotentialData){
+          for (var i=0;i<numRuns;i++){
+          	// using 2 here
+          	// 0 would fetch all data multiple times
+            getPotentialData(2,i);
+          }
+        }
+
+
 
   var offset = cloudGeom.boundingSphere.center;
   
@@ -663,7 +687,7 @@ var nextImage = function (d,i,el){
 
   var curOrder = getCurrentSorting();
   var oldIndex = curOrder.indexOf(highlightImages[Math.floor(i/2)]);
-
+  var newImageIndex = 200;
 
   var left = d3.select(el).classed("btnLeft");
 
@@ -692,6 +716,27 @@ var setImage = function (curHighlight, curRun) {
   }
 }
 
+var updateCanvasHeading = function(highlightIndex, newRun){
+	d3.select("#blockDIV_"+highlightIndex)
+		.text("run: " + newRun)
+	.append("p")
+		.text("loading potential data ... ");
+}
+
+var setColBuf = function(curHighlight, curRun){
+
+    var rgb = {};
+    for (var c=0; c< numVertices; c++){
+      rgb = hexToRgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
+      colBufs[curHighlight.toString()].colors[c*3+0] = rgb.r/255;
+      colBufs[curHighlight.toString()].colors[c*3+1] = rgb.g/255;
+      colBufs[curHighlight.toString()].colors[c*3+2] = rgb.b/255;
+    };
+
+
+    colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
+}
+
 
 var getPotentialData = function(curHighlight, curRun){
 
@@ -700,15 +745,20 @@ var getPotentialData = function(curHighlight, curRun){
     return;
   }
 
+  updateCanvasHeading(curHighlight, curRun);
+
   if(allColors[curRun.toString()]){
     if(curHighlight == activeHighlight){
       if(!getAllPotentialData){
         blockCanvas(curHighlight);
       }
+      /*
       setTimeout(function(){ getPotentialData(curHighlight+1, highlightImages[curHighlight +1]); }, 500);
-    }else{
-      getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
+      */
     }
+
+      setColBuf(curHighlight, curRun);
+      getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
   }else{
 
     blockCanvas(curHighlight);
@@ -736,17 +786,8 @@ var getPotentialData = function(curHighlight, curRun){
         };
 
 
+        setColBuf(curHighlight, curRun);
 
-        var rgb = {};
-        for (var c=0; c< numVertices; c++){
-          rgb = hexToRgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
-          colBufs[curHighlight.toString()].colors[c*3+0] = rgb.r/255;
-          colBufs[curHighlight.toString()].colors[c*3+1] = rgb.g/255;
-          colBufs[curHighlight.toString()].colors[c*3+2] = rgb.b/255;
-        };
-
-
-        colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
         
 
         getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
@@ -1024,13 +1065,8 @@ d3.csv(csvFile[9], function(error, data) {
                 numRuns++;
         });
 
-        if (getAllPotentialData){
-          for (var i=0;i<numRuns;i++){
-            getPotentialData(0,i);
-          }
-//          d3.selectAll("button")
-  //        .on("click", function(d,i) {return nextImage(d,i,this);});
-        }
+
+
         //tODO remove xxx
           d3.selectAll("button")
           .on("click", function(d,i) {return nextImage(d,i,this);});
