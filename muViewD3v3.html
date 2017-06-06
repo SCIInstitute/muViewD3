@@ -67,7 +67,7 @@ form {
   height: 210px;
   position: absolute;
   /*
-  center text to middle of div
+	center text to middle of div
   text-align: center;
   vertical-align: middle;
   line-height: 90px; 
@@ -497,8 +497,8 @@ d3.csv(positionFile, function(error, dataPos) {
 
         if (getAllPotentialData){
           for (var i=0;i<numRuns;i++){
-            // using 2 here
-            // 0 would fetch all data multiple times
+          	// using 2 here
+          	// 0 would fetch all data multiple times
             getPotentialData(2,i);
           }
         }
@@ -717,10 +717,10 @@ var setImage = function (curHighlight, curRun) {
 }
 
 var updateCanvasHeading = function(highlightIndex, newRun){
-  d3.select("#blockDIV_"+highlightIndex)
-    .text("run: " + newRun)
-  .append("p")
-    .text("loading potential data ... ");
+	d3.select("#blockDIV_"+highlightIndex)
+		.text("run: " + newRun)
+	.append("p")
+		.text("loading potential data ... ");
 }
 
 var setColBuf = function(curHighlight, curRun){
@@ -1110,9 +1110,9 @@ d3.csv(csvFile[6], function(error, data) {
             dataByGroup.push({ "key": columns[i], "values": vals[i]});
         }
 
-
+console.log(dataByGroup)
   stack(dataByGroup);
-
+  console.log(dataByGroup)
   x.domain(data.map(function(d) { return d.runID; }));
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
 

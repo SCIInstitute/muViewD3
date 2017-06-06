@@ -67,7 +67,7 @@ form {
   height: 210px;
   position: absolute;
   /*
-	center text to middle of div
+  center text to middle of div
   text-align: center;
   vertical-align: middle;
   line-height: 90px; 
@@ -363,6 +363,8 @@ if(showImages)
 else
   height = 750 - margin.top - margin.bottom;
 
+var subChartHeight = 300;
+
 
 
 var allPotentialFields = {};
@@ -500,8 +502,8 @@ d3.csv(positionFile, function(error, dataPos) {
 
         if (getAllPotentialData){
           for (var i=0;i<numRuns;i++){
-          	// using 2 here
-          	// 0 would fetch all data multiple times
+            // using 2 here
+            // 0 would fetch all data multiple times
             getPotentialData(2,i);
           }
         }
@@ -636,9 +638,12 @@ var tip = d3.tip()
   })
 
 
-
+// TODO xxx 500 should be height
 var y0 = d3.scaleBand()
     .rangeRound([500, 0], .2);
+
+var y1 = d3.scaleLinear()
+    .rangeRound([subChartHeight, 0]);
 
 
 var x = d3.scaleBand()
@@ -730,10 +735,10 @@ var setImage = function (curHighlight, curRun) {
 }
 
 var updateCanvasHeading = function(highlightIndex, newRun){
-	d3.select("#blockDIV_"+highlightIndex)
-		.text("run: " + newRun)
-	.append("p")
-		.text("loading potential data ... ");
+  d3.select("#blockDIV_"+highlightIndex)
+    .text("run: " + newRun)
+  .append("p")
+    .text("loading potential data ... ");
 }
 
 var setColBuf = function(curHighlight, curRun){
@@ -878,9 +883,8 @@ var changeColorScale = function(){
       .domain([minPotentialValues, maxPotentialValues])
       .range([legendHeight, 0]);
 
-  var legendAxis = d3.svg.axis()
+  var legendAxis = d3.axisRight()
       .scale(legendScale)
-      .orient("right")
       .tickValues(d3.range(minPotentialValues, maxPotentialValues, 5))
       .tickFormat(d3.format("d"));
 
@@ -1131,23 +1135,21 @@ d3.csv(csvFile[6], function(error, data) {
 */
 
 
-console.log(dataByGroup);
-
-  stack.keys(data);
-
+  var keys = data.columns.filter(function(key) { return key !== 'runID'; })
+  stack.keys(keys);
   stack.order(d3.stackOrderNone);
   stack.offset(d3.stackOffsetNone);
 
-  console.log(stack(data));
-
   x.domain(data.map(function(d) { return d.runID; }));
-  y0.domain(dataByGroup.map(function(d) { return d.key; }));
+  y0.domain(columns);//dataByGroup.map(function(d) { return d.key; }));
 
   var yIndividual = {};
   var  yAxisIndividual =[];
   columns.forEach(function(d,i){
     yIndividual[d] = d3.scaleLinear();
-    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.bandwidth(), 0]);
+    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) 
+                          ,d3.max(data, function(dat) { return dat[d]; }) ])
+                  .range([y0.bandwidth(), 0]);
     yAxisIndividual[i] = d3.axisLeft()
       .scale(yIndividual[d])
       //.orient("left")
@@ -1156,20 +1158,24 @@ console.log(dataByGroup);
 
 
   var group = main.selectAll(".group")
-      .data(dataByGroup)
+      .data(stack(data))
     .enter().append("g")
       .attr("class", "group")
-      .attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
+      .attr("transform", function(d) { return "translate(0," +y0(d.key) + ")"; });
 
-
+/*
   group.selectAll("rect")
-      .data(function(d) { return d.values; })
+      .data(function(d,i) {
+          for(var di=0; di < d.length; di++){
+            d[di].group = columns[i];
+          }
+            return d; })
     .enter().append("rect")
-      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID + " bar" + d.group;})
-      .attr("x", function(d) { return x(d.runID); })
-      .attr("y", function(d) { return yIndividual[d.group](d.value); })
+      .attr("class", function(d,i) {console.log(d.group); return colorClass(columns[d.group], i) + " bar" + d.data.runID + " bar" + columns[d.group];})
+      .attr("x", function(d) { return x(d.data.runID); })
+      .attr("y", function(d) { return yIndividual[columns[d.group]](d[1]);})//yIndividual[d.group](d.value); })
       .attr("width", x.bandwidth())
-      .attr("height", function(d) { return y0.bandwidth() - yIndividual[d.group](d.value); })//
+      .attr("height", function(d) { return y0.bandwidth() - yIndividual[columns[d.group]](d[1]); })//
 //      .on('mouseover', tip.show)
 //      .on('mouseout', tip.hide)
       .on('mouseover', function(d) {highlightON(d)})
@@ -1179,7 +1185,28 @@ console.log(dataByGroup);
         getPotentialData(0,highlightImages[0]);
         setImage(activeHighlight, i);
       });
-
+*/
+  group.selectAll("rect")
+      .data(function(d,i) {
+          for(var di=0; di < d.length; di++){
+            d[di].group = columns[i];
+          }
+            return d; })
+    .enter().append("rect")
+      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.data.runID + " bar" + d.group;})
+      .attr("x", function(d) { return x(d.data.runID); })
+      .attr("y", function(d) { return yIndividual[d.group](d[1]); })
+      .attr("width", x.bandwidth())
+      .attr("height", function(d) { return y0.bandwidth() - yIndividual[d.group](d[1]); })//
+//      .on('mouseover', tip.show)
+//      .on('mouseout', tip.hide)
+      .on('mouseover', function(d) {highlightON(d)})
+      .on('mouseout', function(d) {highlightOFF(d)})
+      .on("click", function(d,i) {
+        highlightImages[activeHighlight] = i;
+        getPotentialData(0,highlightImages[0]);
+        setImage(activeHighlight, i);
+      });
 
       // this function based on
       //https://bl.ocks.org/mbostock/3885705
@@ -1211,9 +1238,8 @@ console.log(dataByGroup);
           }
       }
 
-
-  for(var i=0;  i < group[0].length; i++){
-    d3.select(group[0][i]).append("g")
+  for(var i=0;  i < group._groups[0].length; i++){
+    d3.select(group._groups[0][i]).append("g")
     .attr("class", "y axis")
     .call(yAxisIndividual[i])
     .append("text")
@@ -1244,6 +1270,7 @@ console.log(dataByGroup);
     .on('change', function(){ changeColorScale();});
 
   changeColorScale();
+
 });
 
 
