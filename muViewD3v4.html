@@ -276,9 +276,12 @@ run:
 
 <!-- LIBRARIES -->
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
-<script src="3.5.3_d3.min.js" charset="utf-8"></script>
+<!-- <script src="3.5.3_d3.min.js" charset="utf-8"></script> -->
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+
 <!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
-<script src="d3Tip.js" charset="utf-8"></script>
+<script src="d3Tip_v4.js" charset="utf-8"></script>
 
 <!-- from https://cdn.rawgit.com/mrdoob/three.js/master/build/three.js -->
 <script src="three.js"></script>
@@ -575,8 +578,16 @@ var maxPotentialValues = 15;//20;
 
 
 var colorAxisDomain = [minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues];
+var colorThresholds = [minPotentialValues, -5, -2,-1,-0.5,-0.25,0,0.25,0.5,1,2,5,10,maxPotentialValues];
 
-var colorScalePotentialValues = d3.scale.linear()
+var bins = d3.histogram()
+    //.domain(colorAxisDomain)
+    //.bins(colorThresholds);
+
+    console.log(bins);
+
+
+var colorScalePotentialValues = d3.scaleLinear()
     .domain(colorAxisDomain)
     .range(colorScales.redToBlueFlip);
 
@@ -626,28 +637,30 @@ var tip = d3.tip()
 
 
 
-var y0 = d3.scale.ordinal()
-    .rangeRoundBands([500, 0], .2);
+var y0 = d3.scaleBand()
+    .rangeRound([500, 0], .2);
 
 
-var x = d3.scale.ordinal()
-    .rangeRoundBands([0, width], .1, 0);
+var x = d3.scaleBand()
+    .rangeRound([0, width], .1, 0);
 
 
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
+var xAxis = d3.axisBottom()
+    .scale(x);
 
 
 // unused I do it manually
 var nest = d3.nest()
     .key(function(d) { return d.group; });
 
-var stack = d3.layout.stack()
+var stack = d3.stack()
+/* todo xx delete
     .values(function(d) { return d.values; })
     .x(function(d) { return d.runID; })
     .y(function(d) { return d.value; })
     .out(function(d, y0) { d.valueOffset = y0; });
+
+*/
 
 
 var blockCanvas = function (curHighlight){
@@ -831,7 +844,7 @@ var changeColorScale = function(){
       .attr('spreadMethod', 'pad');
 
 
-  colorScalePotentialValues = d3.scale.linear()
+  colorScalePotentialValues = d3.scaleLinear()
     .domain(colorAxisDomain)
     .range(selectedColors);
 
@@ -861,7 +874,7 @@ var changeColorScale = function(){
 
 
     // create a scale and axis for the legend
-  var legendScale = d3.scale.linear()
+  var legendScale = d3.scaleLinear()
       .domain([minPotentialValues, maxPotentialValues])
       .range([legendHeight, 0]);
 
@@ -952,7 +965,7 @@ var colorClass = function(d, runID){
   return cssclass;
 };
 
-var svg = d3.select("body").insert("svg","div")
+var svg = d3.select("body").append("svg","div")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
 
@@ -1110,18 +1123,34 @@ d3.csv(csvFile[6], function(error, data) {
             dataByGroup.push({ "key": columns[i], "values": vals[i]});
         }
 
+
+/*
+  console.log(dataByGroup)
   stack(dataByGroup);
+  console.log(dataByGroup)
+*/
+
+
+console.log(dataByGroup);
+
+  stack.keys(data);
+
+  stack.order(d3.stackOrderNone);
+  stack.offset(d3.stackOffsetNone);
+
+  console.log(stack(data));
+
   x.domain(data.map(function(d) { return d.runID; }));
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
 
   var yIndividual = {};
   var  yAxisIndividual =[];
   columns.forEach(function(d,i){
-    yIndividual[d] = d3.scale.linear();
-    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
-    yAxisIndividual[i] = d3.svg.axis()
+    yIndividual[d] = d3.scaleLinear();
+    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.bandwidth(), 0]);
+    yAxisIndividual[i] = d3.axisLeft()
       .scale(yIndividual[d])
-      .orient("left")
+      //.orient("left")
       .ticks(2);
   });
 
@@ -1139,8 +1168,8 @@ d3.csv(csvFile[6], function(error, data) {
       .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID + " bar" + d.group;})
       .attr("x", function(d) { return x(d.runID); })
       .attr("y", function(d) { return yIndividual[d.group](d.value); })
-      .attr("width", x.rangeBand())
-      .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })//
+      .attr("width", x.bandwidth())
+      .attr("height", function(d) { return y0.bandwidth() - yIndividual[d.group](d.value); })//
 //      .on('mouseover', tip.show)
 //      .on('mouseout', tip.hide)
       .on('mouseover', function(d) {highlightON(d)})
@@ -1189,7 +1218,7 @@ d3.csv(csvFile[6], function(error, data) {
     .call(yAxisIndividual[i])
     .append("text")
       .attr("class", "group-label")
-      .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3 //yIndividual[d.key](d.values[0].value)
+      .attr("transform", function(d) { return "translate(-60,"+ y0.bandwidth()/3 //yIndividual[d.key](d.values[0].value)
        //+yIndividual[d.key](yIndividual[d.key].rangeBand()/2 ) 
        +"),rotate(-90)";})
       .attr("y", 6)

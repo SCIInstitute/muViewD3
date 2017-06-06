@@ -24,3 +24,10 @@ colorScales.RdGy = ['#67001f','#b2182b','#d6604d','#f4a582','#fddbc7','#ffffff',
 colorScales.RdYlBu = ['#a50026','#d73027','#f46d43','#fdae61','#fee090','#ffffbf','#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'];
 colorScales.RdYlGn = ['#a50026','#d73027','#f46d43','#fdae61','#fee08b','#ffffbf','#d9ef8b','#a6d96a','#66bd63','#1a9850','#006837'];
 colorScales.Spectral = ['#9e0142','#d53e4f','#f46d43','#fdae61','#fee08b','#ffffbf','#e6f598','#abdda4','#66c2a5','#3288bd','#5e4fa2'];
+
+
+
+//Sam
+
+colorScales.WeaVER = ['#4a0000','#661909','#783614','#875422','#967532','#a19142','#abab55','#a8b569','#aabf7e','#adc793','#b6cfa9','#c4d6c1','#d6d6d6','#c1d6cf','#a9cfc8','#93c7c7','#7eb4bf','#699cb5','#5580ab','#4261a1','#324296','#222287','#20106e','#200b4a'];
+colorScales.Moreland/*_CoolWarm*/ = ['#3b4cc0','#445acc','#4d68d7','#5775e1','#6282ea','#6c8ef1','#779af7','#82a5fb','#8db0fe','#98b9ff','#a3c2ff','#aec9fd','#b8d0f9','#c2d5f4','#ccd9ee','#d5dbe6','#dddddd','#e5d8d1','#ecd3c5','#f1ccb9','#f5c4ad','#f7bba0','#f7b194','#f7a687','#f49a7b','#f18d6f','#ec7f63','#e57058','#de604d','#d55042','#cb3e38','#c0282f','#b40426'];
