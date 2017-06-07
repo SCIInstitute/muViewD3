@@ -278,9 +278,6 @@ run:
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
 <script src="3.5.3_d3.min.js" charset="utf-8"></script>
 
-<!-- //cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js -->
-<script src="d3.legend.js"></script>
-
 <!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
 <script src="d3Tip.js" charset="utf-8"></script>
 
@@ -396,7 +393,6 @@ var heightCanvas = 230;//window.innerHeight
 scene = new THREE.Scene()
 //camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
 camera = new THREE.OrthographicCamera(70, -70, 70, -70, 0.1, 100000);
-//camera = new THREE.PerspectiveCamera(45,widthCanvas / heightCanvas, 0.1, 100000);
 camera.zoom = 4;
 scene.add(camera)
 //camera.position.x = -80;
@@ -428,10 +424,6 @@ canvas.addEventListener('click', function(evt) {
         }
         activeHighlight = selectedImage;
       }, false);
-// geometry = new THREE.BoxGeometry( 200, 200, 200 )
-// material = new THREE.MeshBasicMaterial({color: 0xff0000})
-// mesh = new THREE.Mesh(geometry, material)
-// scene.add(mesh)
 
 
 var myUniforms = {
@@ -454,7 +446,6 @@ var particles;
 var positions;
 
 
-//var positions = [];
 d3.csv(positionFile, function(error, dataPos) {
   particles = dataPos.length;
   positions = new Float32Array(particles * 3);
@@ -469,7 +460,6 @@ d3.csv(positionFile, function(error, dataPos) {
     d.z = +d.z;
 
     positions[i*3] = d.x, positions[i*3 + 1] = d.y, positions[i*3 + 2] = d.z;
-    //colors[i*3] = 0.5, colors[i*3 + 1] = 0.2, colors[i*3 + 2] = 0.4;
     numVertices ++;
 
     for(var img=0;img<numImages;img++){
@@ -515,8 +505,6 @@ d3.csv(positionFile, function(error, dataPos) {
   var pointCloud = new THREE.Points(cloudGeom, cloudMat);
 
   pointCloud.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( -offset.x, -offset.y, -offset.z ) );
-  //pointCloud.position.copy( cloudGeom.centroid );
-
 
   scene.add(pointCloud);
 
@@ -645,12 +633,10 @@ var colorAxisDomain = [minPotentialValues,-2,-0.5, 0,0.5, 2, maxPotentialValues]
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
-    .range(selectedColors);//colorScales.redToBlueFlip);
+    .range(selectedColors);
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-
 function hexToRgb(hex) {
-
 
     // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
     var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -870,18 +856,21 @@ var changeColorScale = function(){
 
 
 
+
+
   var revert = document.getElementById('revertColor').value;
 
 
   var select = document.getElementById('selectColorScale');
   selectedColors = colorScales[select.options[select.selectedIndex].value];
 
+  console.log('change', selectedColors)
+
+
+
   if(revert){
     selectedColors = selectedColors.reverse();
   }
-
-  /// Append color legend based on https://bl.ocks.org/starcalibre/6cccfa843ed254aa0a0d
-
 
   var legendWidth = 50;
   var legendHeight =  195;
@@ -889,6 +878,10 @@ var changeColorScale = function(){
 
   main.select('#gradient').remove();
   main.select('#colorAxis').remove();
+
+
+
+  colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
 
   // append gradient bar
   var gradient = main.append('defs')
@@ -901,25 +894,14 @@ var changeColorScale = function(){
       .attr('spreadMethod', 'pad');
 
 
-var arrColor=[];
-var arrData=[];
-for(var i = -15;i<16;i+=0.001){
-  arrData.push(i)
-  arrColor.push(colorScalePotentialValues(i))
-}
-//console.log(arr)
-//console.log(arrd)
+	var arrColor=[];
+	var arrData=[];
+	for(var i = -15;i<16;i+=0.001){
+	  arrData.push(i)
+	  arrColor.push(colorScalePotentialValues(i))
+	}
 
 
-
-
-  colorScalePotentialValues = d3.scale.linear()
-    .domain(colorAxisDomain)
-    .range(selectedColors);
-
-  // programatically generate the gradient for the legend
-  // this creates an array of [pct, colour] pairs as stop
-  // values for legend
   var pct = linspace(0, 100, arrColor.length).map(function(d) {
       return Math.round(d) + '%';
   });
@@ -960,128 +942,6 @@ for(var i = -15;i<16;i+=0.001){
       .call(legendAxis);
 
 
-
-/*
-  main.select('#gradient').remove();
-  main.select('#colorAxis').remove();
-
-  // append gradient bar
-  var gradient = main.append('defs')
-      .append('linearGradient')
-      .attr('id', 'gradient')
-      .attr('x1', '0%') // bottom
-      .attr('y1', '100%')
-      .attr('x2', '0%') // to top
-      .attr('y2', '0%')
-      .attr('spreadMethod', 'pad');
-
-
-  colorScalePotentialValues = d3.scale.linear()
-    .domain(colorAxisDomain)
-    .range(selectedColors);
-
-  // programatically generate the gradient for the legend
-  // this creates an array of [pct, colour] pairs as stop
-  // values for legend
-  var pct = linspace(0, 100, selectedColors.length).map(function(d) {
-      return Math.round(d) + '%';
-  });
-
-  var colourPct = d3.zip(pct, selectedColors);
-
-  colourPct.forEach(function(d) {
-      gradient.append('stop')
-          .attr('offset', d[0])
-          .attr('stop-color', d[1])
-          .attr('stop-opacity', 1);
-  });
-
-
-colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
-
-
-  var legendScale = d3.scale.linear()
-      .domain([d3.min(colorAxisDomain), d3.max(colorAxisDomain)])
-      .range([legendHeight, 0]);
-
-  var legendAxis = d3.svg.axis()
-      .scale(legendScale)
-      .orient("right")
-      .tickValues([d3.min(colorAxisDomain), d3.max(colorAxisDomain)]);//d3.range(minPotentialValues, maxPotentialValues, 5));
-
-
-
-
-
-
-var arr=[];
-var arrd=[];
-for(var i = -7;i<9;i+=2){
-  arrd.push(i)
-  arr.push(colorScalePotentialValues(i))
-}
-console.log(arr)
-console.log(arrd)
-
-
-  var colorScale = d3.scale.quantize()
-    .domain(arrd)//[d3.min(colorAxisDomain), d3.max(colorAxisDomain)])
-    .range(arr)
-
-
-  var colorLegend = d3.legend.color()
-        .labelFormat(d3.format(".0f"))
-        .scale(colorScale)
-        .shapePadding(5)
-        .shapeWidth(20)
-        .shapeHeight(20)
-        .labelOffset(5);
-
-
-
-
-
-
-
-  main.append("g")
-      .attr("id", "colorAxis")
-      .attr("class", "legend axis")
-      .attr("transform", "translate(" + (730+legendWidth) + ", 525)")//(780+legendWidth) + ", 525)")//525)")
-      .call(colorLegend);
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   for (var img=0;img<numImages;img++){
     var rgb = {};
     for (var c=0; c< numVertices; c++){
@@ -1112,16 +972,14 @@ var drawNow = function() {
       var left   = (width+imageFrameSize + 5)*i;//(renderer.domElement.clientWidth/numImages) * i;//rect.left;
       var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
 
-      //camera.aspect = width / height;
-      //     camera.updateProjectionMatrix();
-//renderer.setRenderTarget( null );
+
       renderer.setViewport( left, bottom, width, height );
       renderer.setScissor( left, bottom, width, height );
       renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
       renderer.clear()
       renderer.setClearColor(clearColorBackground);
 
-//renderer.setRenderTarget( null );
+
       renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
       renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
 
@@ -1211,9 +1069,7 @@ function highlightOFF(d){
 var csvFile=[];
 
 csvFile[0] = 'data/dataset_' + dataset + 'vals_pcaWeight.csv';
-//csvFile[1] = 'data/d4s1_9vals_pcaWeight.csv';
-//csvFile[2] = 'data/d4s2_41vals_pcaWeight.csv';
-//csvFile[3] = 'data/d4s3_137vals_pcaWeight.csv';
+
 csvFile[1] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_' + dataset + '_pcaWeight.csv';
 
 csvFile[2] = 'data/inputsPCA_12_2-8depths_100setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
@@ -1272,9 +1128,7 @@ d3.csv(csvFile[6], function(error, data) {
         });
 
 
-
-        //tODO remove xxx
-          d3.selectAll("button")
+        d3.selectAll("button")
           .on("click", function(d,i) {return nextImage(d,i,this);});
 
         if (showImages){
@@ -1289,7 +1143,6 @@ d3.csv(csvFile[6], function(error, data) {
                   .attr("y","100");
 
 
-                  //var context = canvas.node().getContext("2d");
 
                 images.append("image")
                   .attr("id", "image" + i)
@@ -1346,9 +1199,7 @@ d3.csv(csvFile[6], function(error, data) {
       .attr("x", function(d) { return x(d.runID); })
       .attr("y", function(d) { return yIndividual[d.group](d.value); })
       .attr("width", x.rangeBand())
-      .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })//
-//      .on('mouseover', tip.show)
-//      .on('mouseout', tip.hide)
+      .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })
       .on('mouseover', function(d) {highlightON(d)})
       .on('mouseout', function(d) {highlightOFF(d)})
       .on("click", function(d,i) {
@@ -1395,8 +1246,7 @@ d3.csv(csvFile[6], function(error, data) {
     .call(yAxisIndividual[i])
     .append("text")
       .attr("class", "group-label")
-      .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3 //yIndividual[d.key](d.values[0].value)
-       //+yIndividual[d.key](yIndividual[d.key].rangeBand()/2 ) 
+      .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3
        +"),rotate(-90)";})
       .attr("y", 6)
       .attr("dy", "0.71em")
