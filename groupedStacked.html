@@ -277,6 +277,10 @@ run:
 <!-- LIBRARIES -->
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
 <script src="3.5.3_d3.min.js" charset="utf-8"></script>
+
+<!-- //cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js -->
+<script src="d3.legend.js"></script>
+
 <!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
 <script src="d3Tip.js" charset="utf-8"></script>
 
@@ -574,11 +578,74 @@ var minPotentialValues = -15;
 var maxPotentialValues = 15;//20;
 
 
-var colorAxisDomain = [minPotentialValues, -2,-0.5, 0,0.5, 2, maxPotentialValues];
+
+
+// http://blockbuilder.org/biovisualize/e2a7bf868417eb4c980e
+var specialColorScales = {
+      'linearBlackAndWhite': function(values){
+        return d3.scale.linear()
+          .domain(d3.extent(values))
+          .range(['#000', '#fff']);
+      },
+      'linear': function(values){
+        return d3.scale.linear()
+          .domain(values)
+          .range(selectedColors);
+      },
+      'histogramEqualize': function(values){
+        var buckets = 100;
+        var quantiles = d3.scale.quantile()
+          .domain(values)
+          .range(d3.range(buckets))
+          .quantiles();
+        var stopCount = quantiles.length;
+        var linearScale = d3.scale.linear()
+          .domain([0, stopCount - 1])
+          .range(selectedColors);
+        
+        var grayScale = d3.range(stopCount).map(function(d){
+          return linearScale(d);
+        });
+        return d3.scale.linear().domain(quantiles).range(grayScale);
+      },
+      'histogramEqualizeColorSelectedColor': function(values){
+       
+                var buckets = selectedColors.length;
+
+                var quantiles = d3.scale.quantile()
+                  .domain(values)
+                  .range(d3.range(buckets))
+                  .quantiles();
+                return d3.scale.linear()
+                  .domain(quantiles)
+                  .range(selectedColors);
+
+
+            },
+    };
+
+var selectedColors = colorScales.default;
+
+
+
+/*
+random potential values with same distribution
+faster than loading all
+*/
+var low = -14;
+var up = 16;
+
+var values = d3.range(1000).map(d3.random.normal(0, 0.04));
+for (var vi=0; vi < values.length; vi++){
+     values[vi] = (up-low)*values[vi]+low;
+}
+
+
+var colorAxisDomain = [minPotentialValues,-2,-0.5, 0,0.5, 2, maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
-    .range(colorScales.redToBlueFlip);
+    .range(selectedColors);//colorScales.redToBlueFlip);
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
@@ -725,9 +792,11 @@ var updateCanvasHeading = function(highlightIndex, newRun){
 
 var setColBuf = function(curHighlight, curRun){
 
+  colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
+
     var rgb = {};
     for (var c=0; c< numVertices; c++){
-      rgb = hexToRgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
+      rgb = d3.rgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
       colBufs[curHighlight.toString()].colors[c*3+0] = rgb.r/255;
       colBufs[curHighlight.toString()].colors[c*3+1] = rgb.g/255;
       colBufs[curHighlight.toString()].colors[c*3+2] = rgb.b/255;
@@ -805,7 +874,7 @@ var changeColorScale = function(){
 
 
   var select = document.getElementById('selectColorScale');
-  var selectedColors = colorScales[select.options[select.selectedIndex].value];
+  selectedColors = colorScales[select.options[select.selectedIndex].value];
 
   if(revert){
     selectedColors = selectedColors.reverse();
@@ -817,6 +886,82 @@ var changeColorScale = function(){
   var legendWidth = 50;
   var legendHeight =  195;
 
+
+  main.select('#gradient').remove();
+  main.select('#colorAxis').remove();
+
+  // append gradient bar
+  var gradient = main.append('defs')
+      .append('linearGradient')
+      .attr('id', 'gradient')
+      .attr('x1', '0%') // bottom
+      .attr('y1', '100%')
+      .attr('x2', '0%') // to top
+      .attr('y2', '0%')
+      .attr('spreadMethod', 'pad');
+
+
+var arrColor=[];
+var arrData=[];
+for(var i = -15;i<16;i+=0.001){
+  arrData.push(i)
+  arrColor.push(colorScalePotentialValues(i))
+}
+//console.log(arr)
+//console.log(arrd)
+
+
+
+
+  colorScalePotentialValues = d3.scale.linear()
+    .domain(colorAxisDomain)
+    .range(selectedColors);
+
+  // programatically generate the gradient for the legend
+  // this creates an array of [pct, colour] pairs as stop
+  // values for legend
+  var pct = linspace(0, 100, arrColor.length).map(function(d) {
+      return Math.round(d) + '%';
+  });
+
+  var colourPct = d3.zip(pct, arrColor);
+
+  colourPct.forEach(function(d) {
+      gradient.append('stop')
+          .attr('offset', d[0])
+          .attr('stop-color', d[1])
+          .attr('stop-opacity', 1);
+  });
+
+  main.append('rect')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr("transform", "translate(780,525)")
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#gradient)');
+
+
+    // create a scale and axis for the legend
+  var legendScale = d3.scale.linear()
+      .domain([d3.min(arrData), d3.max(arrData)])
+      .range([legendHeight, 0]);
+
+  var legendAxis = d3.svg.axis()
+      .scale(legendScale)
+      .orient("right")
+      .tickValues(d3.range(d3.min(arrData), d3.max(arrData), 5))
+      .tickFormat(d3.format("d"));
+
+  main.append("g")
+      .attr("id", "colorAxis")
+      .attr("class", "legend axis")
+      .attr("transform", "translate(" + (780+legendWidth) + ", 524)")
+      .call(legendAxis);
+
+
+
+/*
   main.select('#gradient').remove();
   main.select('#colorAxis').remove();
 
@@ -851,31 +996,90 @@ var changeColorScale = function(){
           .attr('stop-opacity', 1);
   });
 
-  main.append('rect')
-      .attr('x1', 0)
-      .attr('y1', 0)
-      .attr("transform", "translate(780,525)")
-      .attr('width', legendWidth)
-      .attr('height', legendHeight)
-      .style('fill', 'url(#gradient)');
+
+colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
 
 
-    // create a scale and axis for the legend
   var legendScale = d3.scale.linear()
-      .domain([minPotentialValues, maxPotentialValues])
+      .domain([d3.min(colorAxisDomain), d3.max(colorAxisDomain)])
       .range([legendHeight, 0]);
 
   var legendAxis = d3.svg.axis()
       .scale(legendScale)
       .orient("right")
-      .tickValues(d3.range(minPotentialValues, maxPotentialValues, 5))
-      .tickFormat(d3.format("d"));
+      .tickValues([d3.min(colorAxisDomain), d3.max(colorAxisDomain)]);//d3.range(minPotentialValues, maxPotentialValues, 5));
+
+
+
+
+
+
+var arr=[];
+var arrd=[];
+for(var i = -7;i<9;i+=2){
+  arrd.push(i)
+  arr.push(colorScalePotentialValues(i))
+}
+console.log(arr)
+console.log(arrd)
+
+
+  var colorScale = d3.scale.quantize()
+    .domain(arrd)//[d3.min(colorAxisDomain), d3.max(colorAxisDomain)])
+    .range(arr)
+
+
+  var colorLegend = d3.legend.color()
+        .labelFormat(d3.format(".0f"))
+        .scale(colorScale)
+        .shapePadding(5)
+        .shapeWidth(20)
+        .shapeHeight(20)
+        .labelOffset(5);
+
+
+
+
+
+
 
   main.append("g")
       .attr("id", "colorAxis")
       .attr("class", "legend axis")
-      .attr("transform", "translate(" + (780+legendWidth) + ", 525)")
-      .call(legendAxis);
+      .attr("transform", "translate(" + (730+legendWidth) + ", 525)")//(780+legendWidth) + ", 525)")//525)")
+      .call(colorLegend);
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   for (var img=0;img<numImages;img++){
