@@ -749,8 +749,7 @@ var nextImage = function (d,i,el){
   }else{
     newImageIndex = curOrder[d3.min([numRuns-1,oldIndex +1])];
   }
-
-  getPotentialData(0,newImageIndex);
+  getPotentialData(Math.floor(i/2),newImageIndex);
   setImage(Math.floor(i/2), newImageIndex);
 }
 
@@ -1090,6 +1089,9 @@ csvFile[8] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k4dataset_' + dataset + '
 csvFile[9] = 'data/MedMeanStdMinMax/mean_med_std_min_maxdataset_' + dataset + '.csv';
 
 csvFile[12] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_'+dataset+'_pcaWeight.csv';
+csvFile[13] = 'data/tsneClusters/TSNE_clustdataset_'+dataset+'_notall.csv';
+
+console.log(csvFile[13])
 
 
 // Does not show clear clusters in Tsne space 
@@ -1100,7 +1102,7 @@ csvFile[10] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNEdatase
 csvFile[11] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNE_distdataset_3.csv'
 */
 
-d3.csv(csvFile[6], function(error, data) {
+d3.csv(csvFile[13], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
