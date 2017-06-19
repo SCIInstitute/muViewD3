@@ -349,6 +349,8 @@ var numRuns=0;
 var numVertices = 0;
 var highlightImages=[];
 var mousePosition = [0,0];
+var yIndividual = {};
+var  yAxisIndividual =[];
 var margin = {top: 10, right: 20, bottom: 20, left: 100},
     width = 960 - margin.left - margin.right,
     height = 750 - margin.top - margin.bottom,
@@ -672,7 +674,9 @@ function linspace(start, end, n) {
 
 var tip = d3.tip()
   .attr('class', 'd3-tip myTip')
-  .offset([35, -70])
+  .offset(function(d){
+    return [y0.rangeBand() + 10 - yIndividual[d.group](d.value), -70];
+  })
   .html(function(d) {
     return "Run: " + d.runID;
   })
@@ -1089,9 +1093,7 @@ csvFile[8] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k4dataset_' + dataset + '
 csvFile[9] = 'data/MedMeanStdMinMax/mean_med_std_min_maxdataset_' + dataset + '.csv';
 
 csvFile[12] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_'+dataset+'_pcaWeight.csv';
-csvFile[13] = 'data/tsneClusters/TSNE_clustdataset_'+dataset+'_notall.csv';
-
-console.log(csvFile[13])
+csvFile[13] = 'data/tsneClusters/TSNE_clustdataset_'+dataset+'_1-6.csv';
 
 
 // Does not show clear clusters in Tsne space 
@@ -1102,7 +1104,7 @@ csvFile[10] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNEdatase
 csvFile[11] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNE_distdataset_3.csv'
 */
 
-d3.csv(csvFile[13], function(error, data) {
+d3.csv(csvFile[6], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
@@ -1175,8 +1177,6 @@ d3.csv(csvFile[13], function(error, data) {
   x.domain(data.map(function(d) { return d.runID; }));
   y0.domain(dataByGroup.map(function(d) { return d.key; }));
 
-  var yIndividual = {};
-  var  yAxisIndividual =[];
   columns.forEach(function(d,i){
     yIndividual[d] = d3.scale.linear();
     yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
