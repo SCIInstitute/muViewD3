@@ -50,15 +50,50 @@ form {
 
 .highlight0{
   fill: rgb(127,201,127) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
 }
 
 .highlight1{
   fill: rgb(190,174,212) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
 }
 
 .highlight2{
   fill: rgb(253,192,134) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
 }
+
+
+
+
+.hoverHighlight0{
+  fill: rgb(127,201,127) !important;
+  opacity: 0.6;
+
+}
+
+.hoverHighlight1{
+    fill: rgb(190,174,212) !important;
+  opacity: 0.6;
+
+}
+
+.hoverHighlight2{
+
+
+  fill: rgb(253,192,134) !important;
+  opacity: 0.6;
+}
+
+
+
+
 
 .blockingDIV{
   width:250px;
@@ -761,9 +796,10 @@ var nextImage = function (d,i,el){
 var setImage = function (curHighlight, curRun) {
 
   highlightImages[curHighlight] = curRun;
-  d3.selectAll(".pcaBar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
+  d3.selectAll(".pcaBar.hover" + curHighlight).classed("highlight"+curHighlight, false);
 
   d3.selectAll(".bar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
+
   d3.selectAll(".bar"+curRun).classed("highlight"+curHighlight, true);
 
   if(showImages){
@@ -1040,7 +1076,7 @@ var images = svg.append("g")
 
 
 function highlightON(d){
-  d3.selectAll(".bar" + d.runID).classed("highlight" + activeHighlight, true);
+  d3.selectAll(".bar" + d.runID).classed("hoverHighlight" + activeHighlight, true);
   
   if(showImages){
       d3.select("#image" + activeHighlight)
@@ -1052,17 +1088,25 @@ function highlightON(d){
 
 function highlightOFF(d){
 
-  if(d.runID == highlightImages[activeHighlight])
-    return;
-  else{
-    d3.selectAll(".bar" + d.runID).classed("highlight" + activeHighlight, false);
-    if(showImages){
-      d3.select("#image" + activeHighlight)
-          .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
-    }
+
+  d3.selectAll(".bar" + d.runID).classed("hoverHighlight" + activeHighlight, false);
+  if(showImages){
+    d3.select("#image" + activeHighlight)
+        .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+highlightImages[activeHighlight] +".png");
+
   }
 
   tip.hide(d);
+}
+
+function changeActiveHighlight(i){
+
+
+  d3.selectAll(".bar" + highlightImages[activeHighlight]).classed("hoverHighlight" + activeHighlight, false);
+  highlightImages[activeHighlight] = i;
+  getPotentialData(0,highlightImages[0]);
+  setImage(activeHighlight, i);
+
 }
 
 
@@ -1220,9 +1264,7 @@ d3.csv(csvFile[9], function(error, data) {
       .on('mouseover', function(d) {highlightON(d)})
       .on('mouseout', function(d) {highlightOFF(d)})
       .on("click", function(d,i) {
-        highlightImages[activeHighlight] = i;
-        getPotentialData(0,highlightImages[0]);
-        setImage(activeHighlight, i);
+        changeActiveHighlight(i);
       });
 
 
