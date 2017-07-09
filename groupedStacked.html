@@ -394,7 +394,7 @@ var heightCanvas = 230;//window.innerHeight
 
 scene = new THREE.Scene()
 //camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
-camera = new THREE.OrthographicCamera(70, -70, 70, -70, 0.1, 100000);
+camera = new THREE.OrthographicCamera(-80, 80, 65, -65, 0.1, 100000);
 camera.zoom = 4;
 scene.add(camera)
 //camera.position.x = -80;
@@ -1071,29 +1071,43 @@ function highlightOFF(d){
 
 var csvFile=[];
 
-csvFile[0] = 'data/dataset_' + dataset + 'vals_pcaWeight.csv';
 
+csvFile[0] = 'data/inputsPCA_123/dataset_' + dataset + '_pcaWeight.csv';
+
+
+//BRETT PCA
 csvFile[1] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_' + dataset + '_pcaWeight.csv';
 
+// all 2-8 BD are same
 csvFile[2] = 'data/inputsPCA_12_2-8depths_100setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
 
+//
 csvFile[3] = 'data/inputsPCA_12_depths_5setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
 
 csvFile[4] = 'data/inputsPCA_12_depths_50setsPerSample/dataset_' + dataset + '_137vals_pcaWeight.csv';
 
 csvFile[5] = 'data/runPC_12_fBD_100samples_j2-10-62/runPC_12_2-10-62fBD_100setsPerSampledataset_' + dataset + '.csv';
 
-
+// BRETT:  NNMF
 //H = how much each run belongs to each cluster
 csvFile[6] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k2dataset_' + dataset + '.csv';
 csvFile[7] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k3dataset_' + dataset + '.csv';
 csvFile[8] = 'data/inputs_NNMF_W/pColVert_NNMF_Wmatrix_k4dataset_' + dataset + '.csv';
 
-
+// BRETT: statistical
 csvFile[9] = 'data/MedMeanStdMinMax/mean_med_std_min_maxdataset_' + dataset + '.csv';
 
+
 csvFile[12] = 'data/inputs_PC_12_2depths_1000setsPerSample_pcaWeight/inputsPCA_12_23depths_1000setsPerSampledataset_'+dataset+'_pcaWeight.csv';
+
+
+//BRETT: tsne clusters
 csvFile[13] = 'data/tsneClusters/TSNE_clustdataset_'+dataset+'_1-6.csv';
+
+
+
+// BRETT: bandDepth j=2
+csvFile[14] = 'data/inputs_depthFull/depthFull_j_2dataset_'+dataset+'.csv';
 
 
 // Does not show clear clusters in Tsne space 
@@ -1104,7 +1118,8 @@ csvFile[10] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNEdatase
 csvFile[11] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNE_distdataset_3.csv'
 */
 
-d3.csv(csvFile[6], function(error, data) {
+// @Brett change this number
+d3.csv(csvFile[9], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
