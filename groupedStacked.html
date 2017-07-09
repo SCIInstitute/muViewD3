@@ -1228,13 +1228,23 @@ d3.csv(csvFile[9], function(error, data) {
 
       // this function based on
       //https://bl.ocks.org/mbostock/3885705
-      function sort(key) {
+      function sort(key, order) {
 
+          var x0;
+          console.log(order);
+
+          if(order == 'descending'){
+            x0 = x.domain(data.sort(
+              function(a, b) {return a[key] - b[key]; })
+                .map(function(d) { return d.runID; }))
+                .copy();
+          }else{
           // Copy-on-write since tweens are evaluated after a delay.
-          var x0 = x.domain(data.sort(
-            function(a, b) {return b[key] - a[key]; })
-              .map(function(d) { return d.runID; }))
-              .copy();
+            x0 = x.domain(data.sort(
+              function(a, b) {return b[key] - a[key]; })
+                .map(function(d) { return d.runID; }))
+                .copy();
+          }
 
 
           for(var i=0;  i < columns.length; i++){
@@ -1258,9 +1268,12 @@ d3.csv(csvFile[9], function(error, data) {
 
 
   for(var i=0;  i < group[0].length; i++){
-    d3.select(group[0][i]).append("g")
+    var rowChart = d3.select(group[0][i]).append("g")
     .attr("class", "y axis")
-    .call(yAxisIndividual[i])
+    .call(yAxisIndividual[i]);
+    console.log(x);
+
+    rowChart
     .append("text")
       .attr("class", "group-label")
       .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3
@@ -1269,7 +1282,21 @@ d3.csv(csvFile[9], function(error, data) {
       .attr("dy", "0.71em")
       .attr("text-anchor", "end")
       .text(function(d){return d.key;})
-      .on("click", function(d){sort(d.key);return d;});
+      .on("click", function(d){sort(d.key);return d;})
+
+
+
+    rowChart
+    .append("text")
+      .attr("class", "group-label")
+      .attr("transform", function(d) {
+          return "translate("+(x(d.values.length -1)+20)+","+ y0.rangeBand()/3
+       +"),rotate(-90)";})
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text(function(d){return d.key;})
+      .on("click", function(d){sort(d.key, 'descending');return d;});
   }
 
 
