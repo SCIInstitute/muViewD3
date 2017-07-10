@@ -39,13 +39,39 @@ form {
 }
 
 #selectColorScale{
-  margin-left: 830px;
+  //margin-left: 830px;
+  margin-left: 880px;
   position: absolute;
+  margin-top: -240px;
+  z-index: 40;
+
 }
 
 #revertColor{
-  margin-left: 940px;
+  margin-left: 954px;
   position: absolute;
+  margin-top: -210px;
+  z-index: 40;
+}
+
+#revertColorLabel{
+  margin-left: 970px;
+  position: absolute; 
+  margin-top: -215px;
+  z-index: 40;
+}
+
+#categorical{
+  margin-left: 954px;
+  position: absolute;
+  margin-top: -190px;
+  z-index: 40;
+}
+#categoricalLabel{
+  margin-left: 970px;
+  position: absolute;
+  margin-top: -195px;
+  z-index: 40;
 }
 
 .highlight0{
@@ -270,7 +296,11 @@ run:
 
 <select id="selectColorScale">
 </select>
+
+<label for="revert" id ="revertColorLabel">revert</label>
 <input id="revertColor" type="checkbox">
+<label for="categorical" id="categoricalLabel">categorical</label>
+<input id="categorical" type="checkbox">
 
 
 
@@ -312,6 +342,7 @@ run:
 <!-- LIBRARIES -->
 <!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
 <script src="3.5.3_d3.min.js" charset="utf-8"></script>
+<script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
 
 <!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
 <script src="d3Tip.js" charset="utf-8"></script>
@@ -382,6 +413,7 @@ var activeHighlight = 0;
 var numImages = 3;
 var numRuns=0;
 var numVertices = 0;
+var categorical = false;
 var highlightImages=[];
 var mousePosition = [0,0];
 var yIndividual = {};
@@ -607,7 +639,9 @@ var maxPotentialValues = 15;//20;
 
 // http://blockbuilder.org/biovisualize/e2a7bf868417eb4c980e
 var specialColorScales = {
+
       'linearBlackAndWhite': function(values){
+
         return d3.scale.linear()
           .domain(d3.extent(values))
           .range(['#000', '#fff']);
@@ -618,6 +652,7 @@ var specialColorScales = {
           .range(selectedColors);
       },
       'histogramEqualize': function(values){
+
         var buckets = 100;
         var quantiles = d3.scale.quantile()
           .domain(values)
@@ -634,16 +669,54 @@ var specialColorScales = {
         return d3.scale.linear().domain(quantiles).range(grayScale);
       },
       'histogramEqualizeColorSelectedColor': function(values){
-       
-                var buckets = selectedColors.length;
 
-                var quantiles = d3.scale.quantile()
-                  .domain(values)
-                  .range(d3.range(buckets))
-                  .quantiles();
-                return d3.scale.linear()
-                  .domain(quantiles)
-                  .range(selectedColors);
+
+        console.log('specialColorScale histEquselCol categorical', categorical)
+
+
+       
+          var buckets = selectedColors.length;
+
+          var quantiles = d3.scale.quantile()
+            .domain(values)
+            .range(d3.range(buckets))
+            .quantiles();
+            console.log(quantiles)
+
+          if(categorical){
+
+            //https://stackoverflow.com/questions/29724944/map-many-possible-input-values-to-discrete-color-domains?rq=1
+
+            console.log('todo categorical on - workgin?', categorical)
+
+                      var c = d3.scale.quantize();
+                      c.domain(values);
+                      c.range(selectedColors
+                        //['red','orange','blue','green']
+                        );
+
+            return c;
+                      
+/*
+            return d3.scale.linear().interpolate(function(d) {
+              console.log(d)
+                    return function(t) {
+                      var i=0
+                      for (; t<quantiles[i] && i<buckets;i++);
+                      //console.log(i);
+                      
+                      return selectedColors[i];
+//                      return d3.hsl(t * 360, 1, 0.5) + "";
+                    };
+                  })
+                  .domain([-15, 20]);
+
+                  */
+          }
+
+          return d3.scale.linear()
+            .domain(quantiles)
+            .range(selectedColors);
 
 
             },
@@ -895,15 +968,11 @@ var changeColorScale = function(){
 
 
 
-
-
-  var revert = document.getElementById('revertColor').value;
-
+  var revert = document.getElementById('revertColor').checked;
+  categorical = document.getElementById('categorical').checked;
 
   var select = document.getElementById('selectColorScale');
   selectedColors = colorScales[select.options[select.selectedIndex].value];
-
-  console.log('change', selectedColors)
 
 
 
@@ -991,6 +1060,7 @@ var changeColorScale = function(){
     };
     colBufs[img.toString()].colBuf.needsUpdate = true;
   }
+
 }
 
 
@@ -1273,7 +1343,6 @@ d3.csv(csvFile[9], function(error, data) {
       function sort(key, order) {
 
           var x0;
-          console.log(order);
 
           if(order == 'descending'){
             x0 = x.domain(data.sort(
@@ -1313,7 +1382,6 @@ d3.csv(csvFile[9], function(error, data) {
     var rowChart = d3.select(group[0][i]).append("g")
     .attr("class", "y axis")
     .call(yAxisIndividual[i]);
-    console.log(x);
 
     rowChart
     .append("text")
@@ -1355,6 +1423,12 @@ d3.csv(csvFile[9], function(error, data) {
 
   d3.select('#revertColor')
     .on('change', function(){ changeColorScale();});
+
+
+  d3.select('#categorical')
+    .on('change', function(){ changeColorScale();});
+
+    
 
   changeColorScale();
 });
