@@ -10,7 +10,7 @@ body {
 }
 
 text {
-  font: 7px sans-serif;
+  font: 10px sans-serif;
 }
 
 .axis path {
@@ -24,7 +24,7 @@ text {
 }
 
 .group-label {
-  font-weight: bold;
+  //font-weight: bold;
   text-anchor: end;
 }
 
@@ -36,6 +36,16 @@ form {
   position: absolute;
   right: 10px;
   top: 10px;
+}
+
+.rowHighlightMain{
+  //fill: green;
+  font-weight: bold
+}
+
+.rowHighlightMinor{
+  //fill: green;
+  //font-weight: bold
 }
 
 #selectColorScale{
@@ -73,6 +83,13 @@ form {
   margin-top: -195px;
   z-index: 40;
 }
+
+.inputHighlight{
+  width: 20px;
+  z-index: 40;
+}
+
+
 
 .highlight0{
   fill: rgb(127,201,127) !important;
@@ -157,9 +174,9 @@ form {
 
 .canvasHeartImages{
   margin-left: 100px;
-  z-index: 20;
+  //z-index: 20;
   position: absolute;
-  margin-top:-250px;
+  margin-top:-220px;
 }
 
 .btnLeft{
@@ -265,18 +282,21 @@ form {
 
 <div id = "blockDIV_0" class = "highlight0 blockingDIV blockingDIV_0">
 run:
+<input type = "text" id="inputHighlight_0" class="inputHighlight">
 <p>
   loading potential (values)...
 </p>
 </div>
 <div id = "blockDIV_1" class = "highlight1 blockingDIV blockingDIV_1">
 run:
+<input type = "text" id="inputHighlight_1" class="inputHighlight">
 <p>
   loading potential (values)...
 </p>
 </div>
 <div id = "blockDIV_2" class = "highlight2 blockingDIV blockingDIV_2">
 run:
+<input type = "text" id="inputHighlight_2" class="inputHighlight">
 <p>
   loading potential (values)...
 </p>
@@ -457,7 +477,7 @@ var clearColorBackground = 0xE0E0E0;
 var imageFrameSize = 5;
 //var width = window.innerWidth, height = window.innerHeight
 var widthCanvas = 900;//width;//window.innerWidth,
-var heightCanvas = 230;//window.innerHeight
+var heightCanvas = 200;//window.innerHeight
 
 scene = new THREE.Scene()
 //camera = new THREE.OrthographicCamera(widthCanvas / - 3, widthCanvas / 3, heightCanvas / 2, heightCanvas / - 3, 1, 10000);
@@ -691,27 +711,9 @@ var specialColorScales = {
 
                       var c = d3.scale.quantize();
                       c.domain(values);
-                      c.range(selectedColors
-                        //['red','orange','blue','green']
-                        );
+                      c.range(selectedColors);
 
             return c;
-                      
-/*
-            return d3.scale.linear().interpolate(function(d) {
-              console.log(d)
-                    return function(t) {
-                      var i=0
-                      for (; t<quantiles[i] && i<buckets;i++);
-                      //console.log(i);
-                      
-                      return selectedColors[i];
-//                      return d3.hsl(t * 360, 1, 0.5) + "";
-                    };
-                  })
-                  .domain([-15, 20]);
-
-                  */
           }
 
           return d3.scale.linear()
@@ -827,7 +829,7 @@ var unblockAllCanvas = function (){
 
   for (var i = 0; i< numImages; i++){
     d3.select("#blockDIV_"+i)
-    .style("z-index","10");
+    .style("z-index","0");
   }
 
   return;
@@ -882,10 +884,8 @@ var setImage = function (curHighlight, curRun) {
 }
 
 var updateCanvasHeading = function(highlightIndex, newRun){
-  d3.select("#blockDIV_"+highlightIndex)
-    .text("run: " + newRun)
-  .append("p")
-    .text("loading potential data ... ");
+  console.log('updateCanvasHeading')
+  document.getElementById('inputHighlight_'+highlightIndex).value = newRun;
 }
 
 var setColBuf = function(curHighlight, curRun){
@@ -1169,7 +1169,7 @@ function highlightOFF(d){
   tip.hide(d);
 }
 
-function changeActiveHighlight(i){
+function changeActiveHighlight(activeHighlight,i){
 
 
   d3.selectAll(".bar" + highlightImages[activeHighlight]).classed("hoverHighlight" + activeHighlight, false);
@@ -1178,7 +1178,18 @@ function changeActiveHighlight(i){
   setImage(activeHighlight, i);
 
 }
+function updateRowHighlights(data,element){
 
+  console.log(data);
+  console.log(element);
+
+  d3.selectAll(".rowHighlightMinor").classed("rowHighlightMinor", false);
+  d3.selectAll(".rowHighlightMain").classed("rowHighlightMinor", false);
+  d3.selectAll(".rowHighlightMain").classed("rowHighlightMain", false);
+
+  d3.select(element).classed("rowHighlightMain", true);
+  //element..classList.add(rowHighlightMain"
+}
 
 
 
@@ -1334,7 +1345,7 @@ d3.csv(csvFile[9], function(error, data) {
       .on('mouseover', function(d) {highlightON(d)})
       .on('mouseout', function(d) {highlightOFF(d)})
       .on("click", function(d,i) {
-        changeActiveHighlight(i);
+        changeActiveHighlight(activeHighlight,i);
       });
 
 
@@ -1392,7 +1403,7 @@ d3.csv(csvFile[9], function(error, data) {
       .attr("dy", "0.71em")
       .attr("text-anchor", "end")
       .text(function(d){return d.key;})
-      .on("click", function(d){sort(d.key);return d;})
+      .on("click", function(d){updateRowHighlights(d,this); sort(d.key);return d;})
 
 
 
@@ -1406,7 +1417,7 @@ d3.csv(csvFile[9], function(error, data) {
       .attr("dy", "0.71em")
       .attr("text-anchor", "end")
       .text(function(d){return d.key;})
-      .on("click", function(d){sort(d.key, 'descending');return d;});
+      .on("click", function(d){updateRowHighlights(d,this); sort(d.key, 'descending');return d;});
   }
 
 
@@ -1427,6 +1438,9 @@ d3.csv(csvFile[9], function(error, data) {
 
   d3.select('#categorical')
     .on('change', function(){ changeColorScale();});
+
+  d3.selectAll('.inputHighlight')
+    .on('change', function(e,i){ changeActiveHighlight(parseInt(this.id.substring(15,16)),this.value);});
 
     
 
