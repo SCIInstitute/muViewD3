@@ -1234,19 +1234,7 @@ csvFile[13] = 'data/tsneClusters/TSNE_clustdataset_'+dataset+'_1-6.csv';
 // BRETT: bandDepth j=2
 csvFile[14] = 'data/inputs_depthFull/depthFull_j_2dataset_'+dataset+'.csv';
 
-
-// Does not show clear clusters in Tsne space 
-// does not make a lot of sense!!
-/*
-csvFile[10] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNEdataset_3.csv'
-
-csvFile[11] = 'data/inputs_TSNE_mean_std_min_max/mean_med_std_min_max,TSNE_distdataset_3.csv'
-*/
-
-
-
-
-
+csvFile[15] = 'data/inputRatios/inputRatios.csv';
 
 
 
@@ -1300,7 +1288,7 @@ csvFile[9] = 'data/hierachicalClustering/hierarchicalClusteringRuns_moreClust_da
 
 */
 // @Brett change this number
-d3.csv(csvFile[9], function(error, data) {
+d3.csv(csvFile[15], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
