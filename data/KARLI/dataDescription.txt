@@ -1,0 +1,22 @@
+
+I think I have the data uploaded, but I could not remember the exact format you need. In general: 
+
+heart.pts -> point cloud of heart geometry
+	-geometry mesh
+act_maps -> activation data for the point cloud for each simulation. 
+	-as Brett's potential fields
+results.txt -> has the data for the simulation (CC, and L2norm) as well as the simulation name 
+design.txt -> matrix for the design parameters that matches the simulation name 
+
+Let me know how I can format it differently or anything. It may be a lot larger because it is a whole point cloud of a heart instead of the surface. 
+
+
+
+bar charts:
+ t,z,phi,the CC and the L2 norm
+
+ design matrix, txt file ,matrix format for simulation names. columns correspond to the simulation names of (t, z,phi,p, cv, n)
+
+Aug2017
+
+home/sci/kgillette/magda_data/
