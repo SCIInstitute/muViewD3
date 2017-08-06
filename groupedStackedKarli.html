@@ -478,14 +478,6 @@ var imageFrameSize = 5;
 //var width = window.innerWidth, height = window.innerHeight
 var widthCanvas = 900;//width;//window.innerWidth,
 var heightCanvas = 200;//window.innerHeight
-
-scene = new THREE.Scene()
-//camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
-camera = new THREE.OrthographicCamera(-50000, 50000, -50000, 50000, -50000, 50000);
-
-scene.add(camera)
-camera.position.z = 500; // needs to be there for interaction to work? 
-
 var canvas = document.getElementById( "c" );
 
 
@@ -591,11 +583,22 @@ d3.csv(positionFile, function(error, dataPos) {
 
   var offset = cloudGeom.boundingSphere.center;
 
-  
-
   var pointCloud = new THREE.Points(cloudGeom, cloudMat);
 
   pointCloud.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( -offset.x, -offset.y, -offset.z ) );
+
+
+  scene = new THREE.Scene()
+  //camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+  // Karli Data camera
+  //camera = new THREE.OrthographicCamera(-50000, 50000, -50000, 50000, -50000, 50000);
+
+  // automatically set camera on mesh
+  camera = new THREE.OrthographicCamera(-cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius);
+
+  scene.add(camera)
+  camera.position.z = 500; // needs to be there for interaction to work? 
+
 
   scene.add(pointCloud);
 
