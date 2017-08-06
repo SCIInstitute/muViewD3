@@ -49,39 +49,45 @@ form {
 }
 
 #selectColorScale{
-  //margin-left: 830px;
+  /*margin-left: 830px;
   margin-left: 880px;
   position: absolute;
   margin-top: -240px;
   z-index: 40;
+  */
+
+  position: absolute;
+margin-top: -240px;
+z-index: 40;
+
 
 }
 
 #revertColor{
-  margin-left: 954px;
+  //margin-left: 954px;
   position: absolute;
-  margin-top: -210px;
-  z-index: 40;
+  margin-top: -10px;
+  //z-index: 40;
 }
 
 #revertColorLabel{
-  margin-left: 970px;
+  margin-left: 20px;
   position: absolute; 
-  margin-top: -215px;
-  z-index: 40;
+  margin-top: -15px;
+  //z-index: 40;
 }
 
 #categorical{
-  margin-left: 954px;
+  //margin-left: 954px;
   position: absolute;
-  margin-top: -190px;
-  z-index: 40;
+  margin-top: 10px;
+  //z-index: 40;
 }
 #categoricalLabel{
-  margin-left: 970px;
+  margin-left: 20px;
   position: absolute;
-  margin-top: -195px;
-  z-index: 40;
+  margin-top: 7px;
+  //z-index: 40;
 }
 
 .inputHighlight{
@@ -112,6 +118,20 @@ form {
 
 }
 
+.highlight3{
+  fill: rgb(255,255,153) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+.highlight4{
+  fill: rgb(56,108,176) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
 
 
 
@@ -128,9 +148,17 @@ form {
 }
 
 .hoverHighlight2{
-
-
   fill: rgb(253,192,134) !important;
+  opacity: 0.6;
+}
+
+.hoverHighlight3{
+  fill: rgb(255,255,153) !important;
+  opacity: 0.6;
+}
+
+.hoverHighlight4{
+  fill: rgb(56,108,176) !important;
   opacity: 0.6;
 }
 
@@ -159,21 +187,31 @@ form {
 
 .blockingDIV_0{
   background-color: rgb(127,201,127);
-  margin-left: 100px;
+  margin-left: 150px;
 }
 
 .blockingDIV_1{
   background-color: rgb(190,174,212);
-  margin-left: 360px;
+  margin-left: 410px;
 }
 
 .blockingDIV_2{
   background-color: rgb(253,192,134);
-  margin-left: 620px;
+  margin-left: 670px;
+}
+
+.blockingDIV_3{
+  background-color: rgb(255,255,153);
+  margin-left: 930px;
+}
+
+.blockingDIV_4{
+  background-color: rgb(56,108,176);
+  margin-left: 1190px;
 }
 
 .canvasHeartImages{
-  margin-left: 100px;
+  margin-left: 150px;
   //z-index: 20;
   position: absolute;
   margin-top:-220px;
@@ -228,6 +266,8 @@ form {
   attribute vec3 color0;
   attribute vec3 color1;
   attribute vec3 color2;
+  attribute vec3 color3;
+  attribute vec3 color4;
   uniform float pointSize;
 
   uniform float alpha;
@@ -255,6 +295,14 @@ form {
     if(colBufToUse == 2){
       myColor = color2;
       vColor = vec4(color2, alpha);
+    }
+    if(colBufToUse == 3){
+      myColor = color3;
+      vColor = vec4(color3, alpha);
+    }
+    if(colBufToUse == 4){
+      myColor = color4;
+      vColor = vec4(color4, alpha);
     }
   }
 </script>
@@ -301,6 +349,24 @@ run:
   loading potential (values)...
 </p>
 </div>
+
+<div id = "blockDIV_3" class = "highlight3 blockingDIV blockingDIV_3">
+run:
+<input type = "text" id="inputHighlight_3" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+
+<!--
+<div id = "blockDIV_4" class = "highlight4 blockingDIV blockingDIV_4">
+run:
+<input type = "text" id="inputHighlight_4" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+-->
 
 <canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
 
@@ -430,7 +496,7 @@ var dataset = 3;
 
 var showImages = false;
 var activeHighlight = 0;
-var numImages = 3;
+var numImages = 4;
 var numRuns=0;
 var numVertices = 0;
 var categorical = false;
@@ -475,9 +541,11 @@ var viewports = [];
 var geometry, material, mesh;
 var clearColorBackground = 0xE0E0E0;
 var imageFrameSize = 5;
+var imageWidth = 250;
+var imageHeight = 200;
 //var width = window.innerWidth, height = window.innerHeight
-var widthCanvas = 900;//width;//window.innerWidth,
-var heightCanvas = 200;//window.innerHeight
+var widthCanvas = imageWidth*numImages+(1+imageFrameSize)*numImages;//width;//window.innerWidth,
+var heightCanvas = imageHeight;//window.innerHeight
 var canvas = document.getElementById( "c" );
 
 
@@ -492,16 +560,7 @@ function getMousePos(canvas, evt) {
 
 canvas.addEventListener('click', function(evt) {
         var mousePos = getMousePos(canvas, evt);
-
-        var selectedImage=0;
-        if(mousePos.x/this.width < 0.3){
-          selectedImage = 0;
-        }else if(mousePos.x/this.width < 0.6 && mousePos.x/this.width > 0.33){
-          selectedImage = 1;
-        }else if(mousePos.x/this.width < 1 && mousePos.x/this.width > 0.66){
-          selectedImage = 2;
-        }
-        activeHighlight = selectedImage;
+        activeHighlight = Math.floor((mousePos.x/this.width)*numImages);
       }, false);
 
 
@@ -744,7 +803,7 @@ for (var vi=0; vi < values.length; vi++){
 }
 
 
-var colorAxisDomain = [minPotentialValues,-2,-0.5, 0,0.5, 2, maxPotentialValues];
+var colorAxisDomain = [minPotentialValues, maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
@@ -930,7 +989,6 @@ var getPotentialData = function(curHighlight, curRun){
   }else{
 
     blockCanvas(curHighlight);
-    console.log("fetching data " + curHighlight + " run " + curRun + " file: " + runIDFileName[curRun]);
 
     //TODO
     d3.text('data/KARLI/act_maps/Eikonal_' + runIDFileName[curRun] + '.dat', function(text) {
@@ -1027,7 +1085,7 @@ var changeColorScale = function(){
   main.append('rect')
       .attr('x1', 0)
       .attr('y1', 0)
-      .attr("transform", "translate(780,525)")
+      .attr("transform", "translate(-50,525)")
       .attr('width', legendWidth)
       .attr('height', legendHeight)
       .style('fill', 'url(#gradient)');
@@ -1040,14 +1098,14 @@ var changeColorScale = function(){
 
   var legendAxis = d3.svg.axis()
       .scale(legendScale)
-      .orient("right")
+      .orient("left")
       .tickValues(d3.range(d3.min(arrData), d3.max(arrData), 5))
       .tickFormat(d3.format("d"));
 
   main.append("g")
       .attr("id", "colorAxis")
       .attr("class", "legend axis")
-      .attr("transform", "translate(" + (780+legendWidth) + ", 524)")
+      .attr("transform", "translate(-50, 524)")
       .call(legendAxis);
 
 
@@ -1077,8 +1135,8 @@ var drawNow = function() {
 
 
       // set the viewport
-      var width  = 250;//rect.right - rect.left;
-      var height = 200;//rect.bottom - rect.top;
+      var width  = imageWidth;//250;//rect.right - rect.left;
+      var height = imageHeight;//200;//rect.bottom - rect.top;
       var left   = (width+imageFrameSize + 5)*i;//(renderer.domElement.clientWidth/numImages) * i;//rect.left;
       var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
 
