@@ -379,6 +379,9 @@ run:
 <button type="button" class="btnLeft highlight2 switchRunButton"> &lt; </button>
 <button type="button" class="btnRight highlight2 switchRunButton"> &gt; </button>
 
+<button type="button" class="btnLeft highlight3 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight3 switchRunButton"> &gt; </button>
+
 
 <select id="selectColorScale">
 </select>
@@ -716,7 +719,7 @@ function getStyleRuleValue(style, selector) {
 }
 
 var minPotentialValues = 0;
-var maxPotentialValues = 100;//20;
+var maxPotentialValues = 180;//20;
 
 
 
@@ -754,11 +757,6 @@ var specialColorScales = {
       },
       'histogramEqualizeColorSelectedColor': function(values){
 
-
-        console.log('specialColorScale histEquselCol categorical', categorical)
-
-
-       
           var buckets = selectedColors.length;
 
           var quantiles = d3.scale.quantile()
@@ -769,8 +767,6 @@ var specialColorScales = {
           if(categorical){
 
             //https://stackoverflow.com/questions/29724944/map-many-possible-input-values-to-discrete-color-domains?rq=1
-
-
             var c = d3.scale.quantize();
             c.domain(values);
             c.range(selectedColors);
@@ -790,20 +786,10 @@ var selectedColors = colorScales.default;
 
 
 
-/*
-random potential values with same distribution
-faster than loading all
-*/
-var low = 0;
-var up = 100;
 
-var values = d3.range(1000).map(d3.random.normal(0, 0.04));
-for (var vi=0; vi < values.length; vi++){
-     values[vi] = (up-low)*values[vi]+low;
-}
-
-
-var colorAxisDomain = [minPotentialValues, maxPotentialValues];
+//  TODO new dataset
+// axis is: [min, 25% quantile,median,75% quantile,max];
+var colorAxisDomain = [minPotentialValues, 23,33,47,maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
@@ -1189,7 +1175,7 @@ var svg = d3.select("body").insert("svg","div")
 d3.selectAll("button")
   .attr("style", function(d,i) {
     return "margin-top: " + (-10) + "px;"
-          +"margin-left: " + (i*100+150 + (i/2)* 50) + "px;";});
+          +"margin-left: " + (i*100+200 + (i/2)* 50) + "px;";});
 
 
 
