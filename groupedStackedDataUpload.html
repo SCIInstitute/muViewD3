@@ -483,11 +483,6 @@ run:
 
 
 
-
-
-
-
-
 //TODO
 // make this input to load & open
 
@@ -496,9 +491,65 @@ run:
 // 2 for 41 run dataset
 // 3 for 137 run dataset
 var dataset = 3;
-var meshFile = '/Users/magdalenaschwarzl/Documents/uni/coursesUtahGIT/research/muViewD3/data/Brett/201708_CylinderActual/Actual/mesh/heartPts.csv';
-var potentialFieldsFolder = '/Users/magdalenaschwarzl/Documents/uni/coursesUtahGIT/research/muViewD3/data/Brett/201708_CylinderActual/Actual/simRuns/dataset_' +dataset+'/';
-var analysisFile = '/Users/magdalenaschwarzl/Documents/uni/coursesUtahGIT/research/muViewD3/data/Brett/201708_CylinderActual/Actual/Measures/inputRatios_dataset_3.csv';
+var analysisFiles = [];
+
+
+
+
+///////////////////////////
+// BRETT:
+///////////////////////////
+
+// old Datasets
+/*
+var meshFile = 'data/Brett/201701_Conductivity/mesh/heartPts.csv';
+var potentialFieldsFolder = 'data/Brett/201701_Conductivity/mesh/simRuns/dataset_' +dataset+'/';
+
+// input Ratios
+analysisFiles[0] = 'data/Brett/201701_Conductivity/Measures/inputRatios/inputRatios.csv';
+
+/// Statistical
+// med mean std min max
+analysisFiles[1] = 'data/Brett/201701_Conductivity/Measures/MedMeanStdMinMax/mean_med_std_min_maxdataset_' +dataset+'.csv';
+
+
+// pca
+analysisFiles[2] = 'data/Brett/201701_Conductivity/Measures/inputsPCA_123/dataset_' +dataset+'_pcaWeight.csv'
+*/
+
+
+
+
+
+
+
+
+// new Datsets:
+var meshFile = 'data/Brett/201708_CylinderActual/Actual/mesh/heartPts.csv';
+var potentialFieldsFolder = 'data/Brett/201708_CylinderActual/Actual/simRuns/dataset_' +dataset+'/';
+
+
+/// 0 - Input Ratios
+analysisFiles[0] = 'data/Brett/201708_CylinderActual/Actual/Measures/inputRatios_dataset_'+dataset+'.csv';
+
+/// 1 - Statistical
+// med mean std min max
+analysisFiles[1] = 'data/Brett/201708_CylinderActual/Actual/Measures/MedMeanStdMinMax_dataset_'+dataset+'.csv';
+
+
+// 2 - pca
+analysisFiles[2] = 'data/Brett/201708_CylinderActual/Actual/Measures/pca_dataset_'+dataset+'.csv';
+
+
+// @ Brett:
+// type here which number you want to look at:
+
+var analysisToLoad = 2;
+
+
+
+
+
 
 
 
@@ -589,13 +640,11 @@ var cloudMat = new THREE.ShaderMaterial({
 var cloudGeom = new THREE.BufferGeometry();
 
 
-var positionFile = meshFile;
 var particles;
 var positions;
 
 
-d3.csv(positionFile, function(error, dataPos) {
-
+d3.csv(meshFile, function(error, dataPos) {
 
   particles = dataPos.length;
   positions = new Float32Array(particles * 3);
@@ -1253,7 +1302,7 @@ function updateRowHighlights(data,element){
 
 var runIDFileName =[];
 
-d3.csv(analysisFile, function(error, data) {
+d3.csv(analysisFiles[analysisToLoad], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);
