@@ -659,7 +659,8 @@ d3.csv(positionFile, function(error, dataPos) {
 scene = new THREE.Scene()
 camera = new THREE.OrthographicCamera(-cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius);
 scene.add(camera)
-camera.position.z = 1;
+camera.position.y = -10;
+camera.position.z = -20;
 
 
 
@@ -805,7 +806,7 @@ var selectedColors = colorScales.default;
 
 
 // TODO data dependant
-var colorAxisDomain = [minPotentialValues, maxPotentialValues];
+var colorAxisDomain = [minPotentialValues, -1, -0.25, 0.25 , 0.5, maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
