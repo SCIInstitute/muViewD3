@@ -1242,6 +1242,22 @@ csvFile[15] = 'data/inputRatios/inputRatios.csv';
 
 
 
+
+
+
+////// Aug 2017
+csvFile[16] = 'data/20170803LinkResCylinder/PCA/pca_dataset_' + dataset + '.csv';
+csvFile[17] = 'data/20170803LinkResCylinder/MedMeanStdMinMax/MedMeanStdMinMax_dataset_' + dataset + '.csv';
+csvFile[18] = 'data/20170803LinkResCylinder/inputRatios/inputRatios.csv';
+
+
+
+
+
+
+
+
+
 //// version Brett
 /*
 
@@ -1288,7 +1304,7 @@ csvFile[9] = 'data/hierachicalClustering/hierarchicalClusteringRuns_moreClust_da
 
 */
 // @Brett change this number
-d3.csv(csvFile[15], function(error, data) {
+d3.csv(csvFile[17], function(error, data) {
 
         var vals = [];
         var columns = d3.keys(data[0]);

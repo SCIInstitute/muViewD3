@@ -495,6 +495,13 @@ run:
 // 3 for 137 run dataset
 var dataset = 3;
 
+var runIDFileName =[];
+
+var runIdFileNameFile  = 'data/KARLI/runIDFileName.csv';
+var analysisFile = 'data/KARLI/resultsParameter.csv';
+
+
+
 
 
 var showImages = false;
@@ -789,11 +796,19 @@ var selectedColors = colorScales.default;
 
 //  TODO new dataset
 // axis is: [min, 25% quantile,median,75% quantile,max];
+// in malab quantile(values(:),0.5)
+// colorAxisvaluesMuViewD3 = [min(values(:)), quantile(values(:),0.25),quantile(values(:),0.5),quantile(values(:),0.75), max(values(:))];
+
+
+// TODO data dependant
 var colorAxisDomain = [minPotentialValues, 23,33,47,maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
     .range(selectedColors);
+
+
+
 
 //https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 function hexToRgb(hex) {
@@ -950,7 +965,6 @@ var setColBuf = function(curHighlight, curRun){
     colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
 }
 
-var runIdFileName = [];
 var getPotentialData = function(curHighlight, curRun){
 
   if (curHighlight >= numImages){
@@ -976,7 +990,7 @@ var getPotentialData = function(curHighlight, curRun){
 
     blockCanvas(curHighlight);
 
-    //TODO
+    //TODO data
     d3.text('data/KARLI/act_maps/Eikonal_' + runIDFileName[curRun] + '.dat', function(text) {
 
         var data = d3.csv.parseRows(text).map(function(row) {
@@ -1231,13 +1245,28 @@ function updateRowHighlights(data,element){
 
 
 
-var csvFile=[];
-var runIDFileName =[];
 
-csvFile[0] = 'data/KARLI/results.csv';
+d3.csv(runIdFileNameFile, function(error, data) {
+  /*
+        var vals = [];
+        var columns = d3.keys(data[0]);
+        var dataByGroup = [];
+        var maximumValue = -100000;
 
+        for(var i=0; i<columns.length;i++){
+            vals[i] = [];
+        }
+*/
+        data.forEach(function(d,runID){
+                // t,CC,L2norm,stim_name,id
+                var row = d;
+                runID = +runID;
+                runIDFileName[runID] = d.stim_name;
+                d.runID = runID;
+        });
+});
 
-d3.csv(csvFile[0], function(error, data) {
+d3.csv(analysisFile, function(error, data) {
         var vals = [];
         var columns = d3.keys(data[0]);
         var dataByGroup = [];
@@ -1254,7 +1283,7 @@ d3.csv(csvFile[0], function(error, data) {
 
                 var row = d;
                 runID = +runID;
-                runIDFileName[runID] = d.stim_name;
+  //                runIDFileName[runID] = d.stim_name;
 
                 d.runID = runID;
 
