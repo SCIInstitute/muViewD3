@@ -262,7 +262,6 @@ z-index: 40;
 <!-- following https://bl.ocks.org/vicapow/7f14a531dec565ca0884 -->
 
 <script type="x-shader/x-vertex" id="vertexshader">
-  attribute float size;
   attribute vec3 color0;
   attribute vec3 color1;
   attribute vec3 color2;
@@ -280,8 +279,7 @@ z-index: 40;
 
   void main() {
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size;
-    mySize = size;
+    gl_PointSize = pointSize;
     gl_Position = projectionMatrix * mvPosition;
 
     if(colBufToUse == 0){
@@ -310,7 +308,6 @@ z-index: 40;
 <script type="x-shader/x-fragment" id="fragmentshader">
   varying vec4 vColor;
   varying vec2 myPosition;
-  varying float mySize;
   varying vec3 myColor;
   void main() {
     gl_FragColor = vec4(myColor.xyz, 1);
@@ -475,7 +472,6 @@ run:
 
 
 
-
 'use strict'
 
 
@@ -484,21 +480,97 @@ run:
 
 
 
-
-
-
-
+//TODO
+// make this input to load & open
 
 // Change this to:
 // 1 for 9 run dataset
 // 2 for 41 run dataset
 // 3 for 137 run dataset
 var dataset = 3;
+var analysisFiles = [];
 
-var runIDFileName =[];
 
-var runIdFileNameFile  = 'data/KARLI/runIDFileName.csv';
-var analysisFile = 'data/KARLI/resultsParameter.csv';
+///////////////////////////
+// BRETT:
+///////////////////////////
+// type here which number you want to look at:
+// 0 = inputRatios
+// 1 = statistical
+// 2 = PCA
+var analysisToLoad = 0;
+
+
+
+// type here which number you want to look at:
+// 0 = conductivity
+// 1 = actual
+// 2 = cylinder
+var datasetToUse = 2;
+
+
+
+// old Datasets
+switch (datasetToUse){
+
+  // old Datset -> conductivities
+  case 0:
+    var meshFile = 'data/Brett/201701_Conductivity/mesh/heartPts.csv';
+    var potentialFieldsFolder = 'data/Brett/201701_Conductivity/mesh/simRuns/dataset_' +dataset+'/';
+
+    // input Ratios
+    analysisFiles[0] = 'data/Brett/201701_Conductivity/Measures/inputRatios/inputRatios.csv';
+
+    /// Statistical
+    // med mean std min max
+    analysisFiles[1] = 'data/Brett/201701_Conductivity/Measures/MedMeanStdMinMax/mean_med_std_min_maxdataset_' +dataset+'.csv';
+
+
+    // pca
+    analysisFiles[2] = 'data/Brett/201701_Conductivity/Measures/inputsPCA_123/dataset_' +dataset+'_pcaWeight.csv'
+    break;
+
+
+
+  // new Datsets - Actual:
+  case 1:
+    var meshFile = 'data/Brett/201708_CylinderActual/Actual/mesh/heartPts.csv';
+    var potentialFieldsFolder = 'data/Brett/201708_CylinderActual/Actual/simRuns/dataset_' +dataset+'/';
+
+
+    /// 0 - Input Ratios
+    analysisFiles[0] = 'data/Brett/201708_CylinderActual/Actual/Measures/inputRatios_dataset_'+dataset+'.csv';
+
+    /// 1 - Statistical
+    // med mean std min max
+    analysisFiles[1] = 'data/Brett/201708_CylinderActual/Actual/Measures/MedMeanStdMinMax_dataset_'+dataset+'.csv';
+
+
+    // 2 - pca
+    analysisFiles[2] = 'data/Brett/201708_CylinderActual/Actual/Measures/pca_dataset_'+dataset+'.csv';
+    break;
+
+  case 2:
+    // new Datsets - Cylinder:
+    var meshFile = 'data/Brett/201708_CylinderActual/Cylinder/mesh/heartPts.csv';
+    var potentialFieldsFolder = 'data/Brett/201708_CylinderActual/Cylinder/simRuns/dataset_' +dataset+'/';
+
+
+    /// 0 - Input Ratios
+    analysisFiles[0] = 'data/Brett/201708_CylinderActual/Actual/Measures/inputRatios_dataset_'+dataset+'.csv';
+
+    /// 1 - Statistical
+    // med mean std min max
+    analysisFiles[1] = 'data/Brett/201708_CylinderActual/Actual/Measures/MedMeanStdMinMax_dataset_3.csv';
+
+
+    // 2 - pca
+    analysisFiles[2] = 'data/Brett/201708_CylinderActual/Actual/Measures/pca_dataset_3.csv';
+    break;
+
+
+}
+
 
 
 
@@ -575,8 +647,8 @@ canvas.addEventListener('click', function(evt) {
 
 
 var myUniforms = {
-    alpha: { type: 'f', value: 0.7 },
-    pointSize: { type: 'f', value: 10 },
+    alpha: { type: 'f', value: 0.9 },
+    pointSize: { type: 'f', value: 3 },
     shouldResize: { type: '1i', value: 1},
     colBufToUse: {type: 'f', value: 0}
   }
@@ -590,14 +662,12 @@ var cloudMat = new THREE.ShaderMaterial({
 
 var cloudGeom = new THREE.BufferGeometry();
 
-/// dataFile here:
-/// TODO
-var positionFile = 'data/KARLI/heart.csv';
+
 var particles;
 var positions;
 
 
-d3.csv(positionFile, function(error, dataPos) {
+d3.csv(meshFile, function(error, dataPos) {
 
   particles = dataPos.length;
   positions = new Float32Array(particles * 3);
@@ -625,9 +695,6 @@ d3.csv(positionFile, function(error, dataPos) {
   });
 
 
-  var sizes = new Float32Array(particles);
-  for(var i = 0; i < particles; i++) sizes[i] = 1;
-
   var posBuff = new THREE.BufferAttribute(positions, 3);
 
 
@@ -636,7 +703,6 @@ d3.csv(positionFile, function(error, dataPos) {
     cloudGeom.addAttribute('color'+img, colBufs[img.toString()].colBuf);
   }
   cloudGeom.addAttribute('position', posBuff);
-  cloudGeom.addAttribute('size', new THREE.BufferAttribute(sizes, 1));
   cloudGeom.computeBoundingSphere();
 
 
@@ -657,16 +723,23 @@ d3.csv(positionFile, function(error, dataPos) {
   pointCloud.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( -offset.x, -offset.y, -offset.z ) );
 
 
-  scene = new THREE.Scene()
-  //camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
-  // Karli Data camera
-  //camera = new THREE.OrthographicCamera(-50000, 50000, -50000, 50000, -50000, 50000);
 
-  // automatically set camera on mesh
-  camera = new THREE.OrthographicCamera(-cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius);
+scene = new THREE.Scene()
+camera = new THREE.OrthographicCamera(-cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius);
+scene.add(camera)
+camera.position.y = -10;
+camera.position.z = -20;
 
-  scene.add(camera)
-  camera.position.z = 500; // needs to be there for interaction to work? 
+
+
+
+
+
+
+
+
+
+
 
 
   scene.add(pointCloud);
@@ -725,8 +798,8 @@ function getStyleRuleValue(style, selector) {
     }
 }
 
-var minPotentialValues = 0;
-var maxPotentialValues = 180;//20;
+var minPotentialValues = -9;
+var maxPotentialValues = 10;//20;
 
 
 
@@ -801,7 +874,7 @@ var selectedColors = colorScales.default;
 
 
 // TODO data dependant
-var colorAxisDomain = [minPotentialValues, 23,33,47,maxPotentialValues];
+var colorAxisDomain = [minPotentialValues, -1.25, -0.25, 0.15 , 0.4, maxPotentialValues];
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
@@ -965,6 +1038,7 @@ var setColBuf = function(curHighlight, curRun){
     colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
 }
 
+var runIdFileName = [];
 var getPotentialData = function(curHighlight, curRun){
 
   if (curHighlight >= numImages){
@@ -989,9 +1063,10 @@ var getPotentialData = function(curHighlight, curRun){
   }else{
 
     blockCanvas(curHighlight);
-
     //TODO data
-    d3.text('data/KARLI/act_maps/Eikonal_' + runIDFileName[curRun] + '.dat', function(text) {
+
+    //data/potentialFields/datatset_'+dataset+'/dataset_'+dataset+'_run'+curRun+'.txt'
+    d3.text(potentialFieldsFolder + 'run_' + curRun + '.txt', function(text) {
 
         var data = d3.csv.parseRows(text).map(function(row) {
           return row.map(function(value) {
@@ -1063,13 +1138,13 @@ var changeColorScale = function(){
 
 	var arrColor=[];
 	var arrData=[];
-	for(var i = 0;i<100;i++){
+	for(var i = minPotentialValues;i<maxPotentialValues+1;i+=((maxPotentialValues-minPotentialValues)/1000)){
 	  arrData.push(i)
 	  arrColor.push(colorScalePotentialValues(i))
 	}
 
 
-  var pct = linspace(0, 100, arrColor.length).map(function(d) {
+  var pct = linspace(0,100, arrColor.length).map(function(d) {
       return Math.round(d) + '%';
   });
 
@@ -1244,10 +1319,10 @@ function updateRowHighlights(data,element){
 
 
 
+var runIDFileName =[];
 
+d3.csv(analysisFiles[analysisToLoad], function(error, data) {
 
-d3.csv(runIdFileNameFile, function(error, data) {
-  /*
         var vals = [];
         var columns = d3.keys(data[0]);
         var dataByGroup = [];
@@ -1256,34 +1331,15 @@ d3.csv(runIdFileNameFile, function(error, data) {
         for(var i=0; i<columns.length;i++){
             vals[i] = [];
         }
-*/
+
         data.forEach(function(d,runID){
+
                 // t,CC,L2norm,stim_name,id
+
+
                 var row = d;
                 runID = +runID;
                 runIDFileName[runID] = d.stim_name;
-                d.runID = runID;
-        });
-});
-
-d3.csv(analysisFile, function(error, data) {
-        var vals = [];
-        var columns = d3.keys(data[0]);
-        var dataByGroup = [];
-        var maximumValue = -100000;
-
-        for(var i=0; i<columns.length;i++){
-            vals[i] = [];
-        }
-
-        data.forEach(function(d,runID){
-
-                // t,CC,L2norm,stim_name,id
-
-
-                var row = d;
-                runID = +runID;
-  //                runIDFileName[runID] = d.stim_name;
 
                 d.runID = runID;
 
