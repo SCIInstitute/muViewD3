@@ -1106,15 +1106,20 @@ var changeColorScale = function(){
   var revert = document.getElementById('revertColor').checked;
   categorical = document.getElementById('categorical').checked;
 
-  console.log(categorical)
   var select = document.getElementById('selectColorScale');
+
+
+  var cloneOfColor = JSON.parse(JSON.stringify(colorScales[select.options[select.selectedIndex].value]));
+
+
   selectedColors = colorScales[select.options[select.selectedIndex].value];
 
 
-
   if(revert){
-    selectedColors = selectedColors.reverse();
+    cloneOfColor = cloneOfColor.reverse();
   }
+
+  selectedColors = cloneOfColor;
 
   var legendWidth = 50;
   var legendHeight =  195;
