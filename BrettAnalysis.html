@@ -581,6 +581,7 @@ var activeHighlight = 0;
 var numImages = 4;
 var numRuns=0;
 var numVertices = 0;
+//var revert = false;
 var categorical = false;
 var highlightImages=[];
 var mousePosition = [0,0];
@@ -1105,6 +1106,7 @@ var changeColorScale = function(){
   var revert = document.getElementById('revertColor').checked;
   categorical = document.getElementById('categorical').checked;
 
+  console.log(categorical)
   var select = document.getElementById('selectColorScale');
   selectedColors = colorScales[select.options[select.selectedIndex].value];
 
