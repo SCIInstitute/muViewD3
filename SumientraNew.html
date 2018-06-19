@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 1300px;
+}
+
+text {
+  font: 10px sans-serif;
+}
+
+.axis path {
+  display: none;
+}
+
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.group-label {
+  //font-weight: bold;
+  text-anchor: end;
+}
+
+.switchRunButton{
+  position: absolute;
+}
+
+form {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.rowHighlightMain{
+  //fill: green;
+  font-weight: bold
+}
+
+.rowHighlightMinor{
+  //fill: green;
+  //font-weight: bold
+}
+
+#selectColorScale{
+  /*margin-left: 830px;
+  margin-left: 880px;
+  position: absolute;
+  margin-top: -240px;
+  z-index: 40;
+  */
+
+  position: absolute;
+margin-top: -240px;
+z-index: 40;
+
+
+}
+
+#revertColor{
+  //margin-left: 954px;
+  position: absolute;
+  margin-top: -10px;
+  //z-index: 40;
+}
+
+#revertColorLabel{
+  margin-left: 20px;
+  position: absolute; 
+  margin-top: -15px;
+  //z-index: 40;
+}
+
+#categorical{
+  //margin-left: 954px;
+  position: absolute;
+  margin-top: 10px;
+  //z-index: 40;
+}
+#categoricalLabel{
+  margin-left: 20px;
+  position: absolute;
+  margin-top: 7px;
+  //z-index: 40;
+}
+
+.inputHighlight{
+  width: 20px;
+  z-index: 40;
+}
+
+
+
+.highlight0{
+  fill: rgb(127,201,127) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+.highlight1{
+  fill: rgb(190,174,212) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+.highlight2{
+  fill: rgb(253,192,134) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+.highlight3{
+  fill: rgb(255,255,153) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+.highlight4{
+  fill: rgb(56,108,176) !important;
+  stroke: #000;
+  stroke-width: 1px;
+
+}
+
+
+
+
+.hoverHighlight0{
+  fill: rgb(127,201,127) !important;
+  opacity: 0.6;
+
+}
+
+.hoverHighlight1{
+    fill: rgb(190,174,212) !important;
+  opacity: 0.6;
+
+}
+
+.hoverHighlight2{
+  fill: rgb(253,192,134) !important;
+  opacity: 0.6;
+}
+
+.hoverHighlight3{
+  fill: rgb(255,255,153) !important;
+  opacity: 0.6;
+}
+
+.hoverHighlight4{
+  fill: rgb(56,108,176) !important;
+  opacity: 0.6;
+}
+
+
+
+
+
+.blockingDIV{
+  width:250px;
+  float: left;
+  z-index: 10;
+  height: 210px;
+  position: absolute;
+  /*
+  center text to middle of div
+  text-align: center;
+  vertical-align: middle;
+  line-height: 90px; 
+  */
+  margin-top: -240px;
+}
+
+.myTip{
+  font-size: 8px;
+}
+
+.blockingDIV_0{
+  background-color: rgb(127,201,127);
+  margin-left: 150px;
+}
+
+.blockingDIV_1{
+  background-color: rgb(190,174,212);
+  margin-left: 410px;
+}
+
+.blockingDIV_2{
+  background-color: rgb(253,192,134);
+  margin-left: 670px;
+}
+
+.blockingDIV_3{
+  background-color: rgb(255,255,153);
+  margin-left: 930px;
+}
+
+.blockingDIV_4{
+  background-color: rgb(56,108,176);
+  margin-left: 1190px;
+}
+
+.canvasHeartImages{
+  margin-left: 150px;
+  //z-index: 20;
+  position: absolute;
+  margin-top:-220px;
+}
+
+.btnLeft{
+  margin-left: 180px;
+}
+
+.btnRight{
+  margin-left: 240px;
+}
+
+
+.pcaBar{
+  fill: rgb(0,0,0);
+}
+
+.bar{
+  fill: rgb(100,100,100);
+}
+
+</style>
+<form>
+</form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- SHADER -->
+<!-- following https://bl.ocks.org/vicapow/7f14a531dec565ca0884 -->
+
+<script type="x-shader/x-vertex" id="vertexshader">
+  attribute vec3 color0;
+  attribute vec3 color1;
+  attribute vec3 color2;
+  attribute vec3 color3;
+  attribute vec3 color4;
+  uniform float pointSize;
+
+  uniform float alpha;
+  varying vec4 vColor;
+  varying vec2 myPosition;
+  varying float mySize;
+  varying vec3 myColor;
+
+  uniform int colBufToUse;
+
+  void main() {
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = pointSize;
+    gl_Position = projectionMatrix * mvPosition;
+
+    if(colBufToUse == 0){
+      myColor = color0;
+      vColor = vec4(color0, alpha);
+    }
+    if(colBufToUse == 1){
+      myColor = color1;
+      vColor = vec4(color1, alpha);
+    } 
+    if(colBufToUse == 2){
+      myColor = color2;
+      vColor = vec4(color2, alpha);
+    }
+    if(colBufToUse == 3){
+      myColor = color3;
+      vColor = vec4(color3, alpha);
+    }
+    if(colBufToUse == 4){
+      myColor = color4;
+      vColor = vec4(color4, alpha);
+    }
+  }
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentshader">
+  varying vec4 vColor;
+  varying vec2 myPosition;
+  varying vec3 myColor;
+  void main() {
+    gl_FragColor = vec4(myColor.xyz, 1);
+  }
+</script>
+
+
+
+
+<html>
+
+<head>
+<title>muVIEW 2</title>
+</head>
+
+<body>
+
+<div id = "blockDIV_0" class = "highlight0 blockingDIV blockingDIV_0">
+run:
+<input type = "text" id="inputHighlight_0" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+<div id = "blockDIV_1" class = "highlight1 blockingDIV blockingDIV_1">
+run:
+<input type = "text" id="inputHighlight_1" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+<div id = "blockDIV_2" class = "highlight2 blockingDIV blockingDIV_2">
+run:
+<input type = "text" id="inputHighlight_2" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+
+<div id = "blockDIV_3" class = "highlight3 blockingDIV blockingDIV_3">
+run:
+<input type = "text" id="inputHighlight_3" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+
+<!--
+<div id = "blockDIV_4" class = "highlight4 blockingDIV blockingDIV_4">
+run:
+<input type = "text" id="inputHighlight_4" class="inputHighlight">
+<p>
+  loading potential (values)...
+</p>
+</div>
+-->
+
+<canvas id="c" width="600px" height = "230px" class="canvasHeartImages" ></canvas>
+
+<button type="button" class="btnLeft highlight0 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight0 switchRunButton"> &gt; </button>
+
+<button type="button" class="btnLeft highlight1 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight1 switchRunButton"> &gt; </button>
+
+<button type="button" class="btnLeft highlight2 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight2 switchRunButton"> &gt; </button>
+
+<button type="button" class="btnLeft highlight3 switchRunButton"> &lt; </button>
+<button type="button" class="btnRight highlight3 switchRunButton"> &gt; </button>
+
+
+<select id="selectColorScale">
+</select>
+
+<label for="revert" id ="revertColorLabel">revert</label>
+<input id="revertColor" type="checkbox">
+<label for="categorical" id="categoricalLabel">categorical</label>
+<input id="categorical" type="checkbox">
+
+
+
+
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- LIBRARIES -->
+<!-- from https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js -->
+<script src="3.5.3_d3.min.js" charset="utf-8"></script>
+<script src="//d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+
+<!-- from http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js -->
+<script src="d3Tip.js" charset="utf-8"></script>
+
+<!-- from https://cdn.rawgit.com/mrdoob/three.js/master/build/three.js -->
+<script src="three.js"></script>
+
+<!-- from https://raw.githubusercontent.com/traversc/OrbitControls-orthographic_camera_fix/master/OrbitControls.js-->
+<script src="threeOrbitControls.js"></script>
+
+<script src="colorScales.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+
+
+
+
+
+
+
+
+
+
+'use strict'
+
+
+
+
+
+
+
+
+
+
+
+
+// Change this to:
+// 1 for 9 run dataset
+// 2 for 41 run dataset
+// 3 for 137 run dataset
+var dataset = 3;
+
+var runIDFileName =[];
+
+var runIdFileNameFile  = 'data/Sumientra/runIDFileName.csv';
+var analysisFile = 'data/Sumientra/stats.csv';
+
+
+
+
+
+var showImages = false;
+var activeHighlight = 0;
+var numImages = 4;
+var numRuns=0;
+var numVertices = 0;
+var categorical = false;
+var highlightImages=[];
+var mousePosition = [0,0];
+var yIndividual = {};
+var  yAxisIndividual =[];
+var margin = {top: 10, right: 20, bottom: 20, left: 100},
+    width = 1300 - margin.left - margin.right,
+    height = 750 - margin.top - margin.bottom,
+    marginOverview = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
+    marginImages = { top: 430, right: margin.right, bottom: 20,  left: margin.left },
+    heightOverview = 500 - marginOverview.top - marginOverview.bottom;
+
+if(showImages)
+  height = 750 - margin.top - margin.bottom;
+else
+  height = 750 - margin.top - margin.bottom;
+
+
+
+var allPotentialFields = {};
+var allColors = {};
+var colBufs = {};
+
+
+var getAllPotentialData = false;
+
+
+
+
+
+for (var i=0; i<numImages;i++){
+  colBufs[i.toString()] = {};
+}
+
+
+
+var scene, camera, renderer;
+var controls;
+var viewports = [];
+var geometry, material, mesh;
+var clearColorBackground = 0xE0E0E0;
+var imageFrameSize = 5;
+var imageWidth = 250;
+var imageHeight = 200;
+//var width = window.innerWidth, height = window.innerHeight
+var widthCanvas = imageWidth*numImages+(1+imageFrameSize)*numImages;//width;//window.innerWidth,
+var heightCanvas = imageHeight;//window.innerHeight
+var canvas = document.getElementById( "c" );
+
+
+
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+canvas.addEventListener('click', function(evt) {
+        var mousePos = getMousePos(canvas, evt);
+        activeHighlight = Math.floor((mousePos.x/this.width)*numImages);
+      }, false);
+
+
+var myUniforms = {
+    alpha: { type: 'f', value: 0.7 },
+    pointSize: { type: 'f', value: 3 },
+    shouldResize: { type: '1i', value: 1},
+    colBufToUse: {type: 'f', value: 0}
+  }
+
+var cloudMat = new THREE.ShaderMaterial({
+    uniforms:       myUniforms,
+    vertexShader:   d3.select('#vertexshader').node().textContent,
+    fragmentShader: d3.select('#fragmentshader').node().textContent,
+    transparent:    true,
+})
+
+var cloudGeom = new THREE.BufferGeometry();
+
+/// dataFile here:
+/// TODO
+var positionFile = 'data/Sumientra/brain.csv';
+var particles;
+var positions;
+
+
+d3.csv(positionFile, function(error, dataPos) {
+
+  particles = dataPos.length;
+  positions = new Float32Array(particles * 3);
+
+  for(var img =0; img< numImages; img++){
+    colBufs[img.toString()].colors = new Float32Array(particles * 3);
+  }
+
+  dataPos.forEach(function(d,i){
+    d.x = +d.x;
+    d.y = +d.y;
+    d.z = +d.z;
+
+    positions[i*3] = d.x, positions[i*3 + 1] = d.y, positions[i*3 + 2] = d.z;
+    numVertices ++;
+
+    for(var img=0;img<numImages;img++){
+      colBufs[img.toString()].colors[i*3 + 0] = 0;//0.2;
+      colBufs[img.toString()].colors[i*3 + 1] = 0;//0.4;
+      colBufs[img.toString()].colors[i*3 + 2] = 0;//0.5;
+
+
+      colBufs[img.toString()].colors[i*3 + img] = 0.8;
+    }
+  });
+
+
+  var posBuff = new THREE.BufferAttribute(positions, 3);
+
+
+  for(var img=0;img<numImages;img++){
+    colBufs[img.toString()].colBuf = new THREE.BufferAttribute(colBufs[img.toString()].colors, 3);
+    cloudGeom.addAttribute('color'+img, colBufs[img.toString()].colBuf);
+  }
+  cloudGeom.addAttribute('position', posBuff);
+  cloudGeom.computeBoundingSphere();
+
+
+        if (getAllPotentialData){
+          for (var i=0;i<numRuns;i++){
+            // using 2 here
+            // 0 would fetch all data multiple times
+            getPotentialData(2,i);
+          }
+        }
+
+
+
+  var offset = cloudGeom.boundingSphere.center;
+
+  var pointCloud = new THREE.Points(cloudGeom, cloudMat);
+
+  pointCloud.geometry.applyMatrix(new THREE.Matrix4().makeTranslation( -offset.x, -offset.y, -offset.z ) );
+
+
+  scene = new THREE.Scene()
+  //camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+  // Karli Data camera
+  //camera = new THREE.OrthographicCamera(-50000, 50000, -50000, 50000, -50000, 50000);
+
+  // automatically set camera on mesh
+  camera = new THREE.OrthographicCamera(-cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius, -cloudGeom.boundingSphere.radius, cloudGeom.boundingSphere.radius);
+
+  scene.add(camera)
+  camera.position.z = 0.1; // needs to be there for interaction to work? 
+
+  scene.add(pointCloud);
+
+
+  renderer = new THREE.WebGLRenderer({alpha: true, canvas: canvas, antialias: true})
+  renderer.setSize(widthCanvas, heightCanvas);
+  renderer.setClearColor(clearColorBackground );
+  document.body.appendChild(renderer.domElement);
+  controls = new THREE.OrbitControls (camera, renderer.domElement);
+
+
+
+
+  var checkExist = setInterval(function() {
+   if (highlightImages.length > 0) {
+      clearInterval(checkExist);
+
+      //load and show initial data
+      getPotentialData(0,highlightImages[0]);
+      animate();
+   }
+    }, 1000);
+
+
+
+});
+
+
+var animate = function(){
+  requestAnimationFrame( animate );
+
+  if(renderer){
+    drawNow();
+  }else{
+    console.log('not ready to draw yet... wait a little')
+    return;
+  }
+}
+
+
+// http://stackoverflow.com/questions/6338217/get-a-css-value-with-javascript
+
+function getStyleRuleValue(style, selector) {
+  var selector_compare=selector.toLowerCase();
+  var selector_compare2= selector_compare.substr(0,1)==='.' ?  selector_compare.substr(1) : '.'+selector_compare;
+
+  for (var i = 0; i < document.styleSheets.length; i++) {
+      var mysheet = document.styleSheets[i];
+      var myrules = mysheet.cssRules ? mysheet.cssRules : mysheet.rules;
+      for (var j = 0; j < myrules.length; j++) {
+          if (myrules[j].selectorText) {
+              var check = myrules[j].selectorText.toLowerCase();
+              switch (check) {
+                  case selector_compare  :
+                  case selector_compare2 : return myrules[j].style[style];
+              }
+          }
+      }
+
+    }
+}
+
+var minPotentialValues = 0;
+var maxPotentialValues = 180;//20;
+
+
+
+
+// http://blockbuilder.org/biovisualize/e2a7bf868417eb4c980e
+var specialColorScales = {
+
+      'linearBlackAndWhite': function(values){
+
+        return d3.scale.linear()
+          .domain(d3.extent(values))
+          .range(['#000', '#fff']);
+      },
+      'linear': function(values){
+        return d3.scale.linear()
+          .domain(values)
+          .range(selectedColors);
+      },
+      'histogramEqualize': function(values){
+
+        var buckets = 100;
+        var quantiles = d3.scale.quantile()
+          .domain(values)
+          .range(d3.range(buckets))
+          .quantiles();
+        var stopCount = quantiles.length;
+        var linearScale = d3.scale.linear()
+          .domain([0, stopCount - 1])
+          .range(selectedColors);
+        
+        var grayScale = d3.range(stopCount).map(function(d){
+          return linearScale(d);
+        });
+        return d3.scale.linear().domain(quantiles).range(grayScale);
+      },
+      'histogramEqualizeColorSelectedColor': function(values){
+
+          var buckets = selectedColors.length;
+
+          var quantiles = d3.scale.quantile()
+            .domain(values)
+            .range(d3.range(buckets))
+            .quantiles();
+
+          if(categorical){
+
+            //https://stackoverflow.com/questions/29724944/map-many-possible-input-values-to-discrete-color-domains?rq=1
+            var c = d3.scale.quantize();
+            c.domain(values);
+            c.range(selectedColors);
+
+            return c;
+          }
+
+          return d3.scale.linear()
+            .domain(quantiles)
+            .range(selectedColors);
+
+
+            },
+    };
+
+var selectedColors = colorScales.default;
+
+
+
+
+//  TODO new dataset
+// axis is: [min, 25% quantile,median,75% quantile,max];
+// in malab quantile(values(:),0.5)
+// colorAxisvaluesMuViewD3 = [min(values(:)), quantile(values(:),0.25),quantile(values(:),0.5),quantile(values(:),0.75), max(values(:))];
+
+
+// TODO data dependant
+var colorAxisDomain = [minPotentialValues, 23,33,47,maxPotentialValues];
+
+var colorScalePotentialValues = d3.scale.linear()
+    .domain(colorAxisDomain)
+    .range(selectedColors);
+
+
+
+
+//https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function hexToRgb(hex) {
+
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+
+
+function linspace(start, end, n) {
+  var out = [];
+  var delta = (end - start) / (n - 1);
+
+  var i = 0;
+  while(i < (n - 1)) {
+      out.push(start + (i * delta));
+      i++;
+  }
+
+  out.push(end);
+  return out;
+}
+
+
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip myTip')
+  .offset(function(d){
+    return [y0.rangeBand() + 10 - yIndividual[d.group](d.value), -70];
+  })
+  .html(function(d) {
+    return "Run: " + d.runID;
+  })
+
+
+
+var y0 = d3.scale.ordinal()
+    .rangeRoundBands([500, 0], .2);
+
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1, 0);
+
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+
+// unused I do it manually
+var nest = d3.nest()
+    .key(function(d) { return d.group; });
+
+var stack = d3.layout.stack()
+    .values(function(d) { return d.values; })
+    .x(function(d) { return d.runID; })
+    .y(function(d) { return d.value; })
+    .out(function(d, y0) { d.valueOffset = y0; });
+
+
+var blockCanvas = function (curHighlight){
+
+  d3.select("#blockDIV_"+curHighlight)
+  .style("z-index", "30");
+
+  return;
+}
+
+var unblockAllCanvas = function (){
+
+  for (var i = 0; i< numImages; i++){
+    d3.select("#blockDIV_"+i)
+    .style("z-index","0");
+  }
+
+  return;
+}
+
+
+var getCurrentSorting = function(){
+  var bars = d3.selectAll(".bar");
+  var orderArray = [];
+
+  for(var i=0; i<numRuns;i++){
+    var filteredList = bars[0][i].className.baseVal.split(" bar");
+    orderArray[i] = parseInt(filteredList[filteredList.length-2]);
+  }
+
+  return orderArray;
+}
+
+
+var nextImage = function (d,i,el){
+
+
+  var curOrder = getCurrentSorting();
+  var oldIndex = curOrder.indexOf(highlightImages[Math.floor(i/2)]);
+  var newImageIndex = 200;
+
+  var left = d3.select(el).classed("btnLeft");
+
+  if(left){
+    newImageIndex = curOrder[d3.max([0,oldIndex-1])];
+  }else{
+    newImageIndex = curOrder[d3.min([numRuns-1,oldIndex +1])];
+  }
+  getPotentialData(Math.floor(i/2),newImageIndex);
+  setImage(Math.floor(i/2), newImageIndex);
+}
+
+
+var setImage = function (curHighlight, curRun) {
+
+  highlightImages[curHighlight] = curRun;
+  d3.selectAll(".pcaBar.hover" + curHighlight).classed("highlight"+curHighlight, false);
+
+  d3.selectAll(".bar.highlight" + curHighlight).classed("highlight"+curHighlight, false);
+
+  d3.selectAll(".bar"+curRun).classed("highlight"+curHighlight, true);
+
+  if(showImages){
+    console.log("no image to show");
+  }
+}
+
+var updateCanvasHeading = function(highlightIndex, newRun){
+  document.getElementById('inputHighlight_'+highlightIndex).value = newRun;
+}
+
+var setColBuf = function(curHighlight, curRun){
+
+  colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
+
+    var rgb = {};
+    for (var c=0; c< numVertices; c++){
+      rgb = d3.rgb(colorScalePotentialValues(allColors[curRun.toString()].data[c]));
+      colBufs[curHighlight.toString()].colors[c*3+0] = rgb.r/255;
+      colBufs[curHighlight.toString()].colors[c*3+1] = rgb.g/255;
+      colBufs[curHighlight.toString()].colors[c*3+2] = rgb.b/255;
+    };
+
+
+    colBufs[curHighlight.toString()].colBuf.needsUpdate = true;
+}
+
+var getPotentialData = function(curHighlight, curRun){
+
+  if (curHighlight >= numImages){
+    unblockAllCanvas();
+    return;
+  }
+
+  updateCanvasHeading(curHighlight, curRun);
+
+  if(allColors[curRun.toString()]){
+    if(curHighlight == activeHighlight){
+      if(!getAllPotentialData){
+        blockCanvas(curHighlight);
+      }
+      /*
+      setTimeout(function(){ getPotentialData(curHighlight+1, highlightImages[curHighlight +1]); }, 500);
+      */
+    }
+
+      setColBuf(curHighlight, curRun);
+      getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
+  }else{
+
+    blockCanvas(curHighlight);
+
+    //TODO data
+    d3.text('data/Sumientra/runs/run_' + curRun + '.txt', function(text) {
+
+        var data = d3.csv.parseRows(text).map(function(row) {
+          return row.map(function(value) {
+            return +value;
+          });
+        });
+
+        var potentialValues = [].concat.apply([], data);
+        allPotentialFields[curRun.toString()] = potentialValues;
+
+        allColors[curRun.toString()]={};
+
+        allColors[curRun.toString()].data=[];
+
+        
+        for (var i=0; i< numVertices; i++){
+          allColors[curRun.toString()].data[i] = potentialValues[i];
+        };
+
+
+        setColBuf(curHighlight, curRun);
+
+        
+
+        getPotentialData(curHighlight+1, highlightImages[curHighlight +1]);
+
+    });
+  }
+}
+
+
+var changeColorScale = function(){
+
+
+  var revert = document.getElementById('revertColor').checked;
+  categorical = document.getElementById('categorical').checked;
+
+  var select = document.getElementById('selectColorScale');
+
+
+  var cloneOfColor = JSON.parse(JSON.stringify(colorScales[select.options[select.selectedIndex].value]));
+
+
+  selectedColors = colorScales[select.options[select.selectedIndex].value];
+
+
+  if(revert){
+    cloneOfColor = cloneOfColor.reverse();
+  }
+
+  selectedColors = cloneOfColor;
+
+  var legendWidth = 50;
+  var legendHeight =  195;
+
+
+  main.select('#gradient').remove();
+  main.select('#colorAxis').remove();
+
+
+
+  colorScalePotentialValues = specialColorScales.histogramEqualizeColorSelectedColor(colorAxisDomain);
+
+  // append gradient bar
+  var gradient = main.append('defs')
+      .append('linearGradient')
+      .attr('id', 'gradient')
+      .attr('x1', '0%') // bottom
+      .attr('y1', '100%')
+      .attr('x2', '0%') // to top
+      .attr('y2', '0%')
+      .attr('spreadMethod', 'pad');
+
+
+	var arrColor=[];
+	var arrData=[];
+	for(var i = 0;i<100;i++){
+	  arrData.push(i)
+	  arrColor.push(colorScalePotentialValues(i))
+	}
+
+
+  var pct = linspace(0, 100, arrColor.length).map(function(d) {
+      return Math.round(d) + '%';
+  });
+
+  var colourPct = d3.zip(pct, arrColor);
+
+  colourPct.forEach(function(d) {
+      gradient.append('stop')
+          .attr('offset', d[0])
+          .attr('stop-color', d[1])
+          .attr('stop-opacity', 1);
+  });
+
+  main.append('rect')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr("transform", "translate(-50,525)")
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .style('fill', 'url(#gradient)');
+
+
+    // create a scale and axis for the legend
+  var legendScale = d3.scale.linear()
+      .domain([d3.min(arrData), d3.max(arrData)])
+      .range([legendHeight, 0]);
+
+  var legendAxis = d3.svg.axis()
+      .scale(legendScale)
+      .orient("left")
+      .tickValues(d3.range(d3.min(arrData), d3.max(arrData), 5))
+      .tickFormat(d3.format("d"));
+
+  main.append("g")
+      .attr("id", "colorAxis")
+      .attr("class", "legend axis")
+      .attr("transform", "translate(-50, 524)")
+      .call(legendAxis);
+
+
+  for (var img=0;img<numImages;img++){
+    var rgb = {};
+    for (var c=0; c< numVertices; c++){
+      rgb = hexToRgb(colorScalePotentialValues(allColors[highlightImages[img].toString()].data[c]));
+      colBufs[img.toString()].colors[c*3+0] = rgb.r/255;
+      colBufs[img.toString()].colors[c*3+1] = rgb.g/255;
+      colBufs[img.toString()].colors[c*3+2] = rgb.b/255;
+    };
+    colBufs[img.toString()].colBuf.needsUpdate = true;
+  }
+
+}
+
+
+var drawNow = function() {
+
+  renderer.setScissorTest( true );
+  for (var i=0; i< numImages ;i++){
+
+
+      myUniforms.colBufToUse.value = i; // Updates this new value
+      myUniforms.colBufToUse.needsUpdate = true;
+
+
+
+      // set the viewport
+      var width  = imageWidth;//250;//rect.right - rect.left;
+      var height = imageHeight;//200;//rect.bottom - rect.top;
+      var left   = (width+imageFrameSize + 5)*i;//(renderer.domElement.clientWidth/numImages) * i;//rect.left;
+      var bottom = 0;//renderer.domElement.clientHeight - rect.bottom;
+
+
+      renderer.setViewport( left, bottom, width, height );
+      renderer.setScissor( left, bottom, width, height );
+      renderer.setClearColor(getStyleRuleValue('fill', '.highlight'+i));
+      renderer.clear()
+      renderer.setClearColor(clearColorBackground);
+
+
+      renderer.setViewport( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize);
+      renderer.setScissor( left+imageFrameSize, bottom+imageFrameSize, width-2*imageFrameSize, height-2*imageFrameSize );
+
+      //colBuf.needsUpdate = true;
+      renderer.render( scene, camera );
+  }
+  renderer.setScissorTest( false );
+}
+
+
+function getMaxOfArray(numArray) {
+  return Math.max.apply(null, numArray);
+}
+
+function getMinOfArray(numArray) {
+  return Math.min.apply(null, numArray);
+}
+
+
+var colorClass = function(d, runID){
+
+  var cssclass="";
+  for(var i=0;i<numImages;i++){
+    if(runID == highlightImages[i])
+      cssclass=cssclass.concat('highlight'+i);
+  }
+  if(d.substring(0,3) == "pca" )
+    cssclass=cssclass.concat(' bar');//pcaBar');
+  else
+    cssclass=cssclass.concat(' bar');
+
+  return cssclass;
+};
+
+var svg = d3.select("body").insert("svg","div")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+d3.selectAll("button")
+  .attr("style", function(d,i) {
+    return "margin-top: " + (-10) + "px;"
+          +"margin-left: " + (i*100+200 + (i/2)* 50) + "px;";});
+
+
+
+var main = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.call(tip);
+
+var images = svg.append("g")
+                    .attr("class", "images")
+                    .attr("transform", "translate(" + marginImages.left + "," + marginImages.top + ")");
+
+
+
+function highlightON(d){
+  d3.selectAll(".bar" + d.runID).classed("hoverHighlight" + activeHighlight, true);
+  
+  if(showImages){
+    console.log('no image found');
+  }
+  tip.show(d);
+}
+
+function highlightOFF(d){
+
+
+  d3.selectAll(".bar" + d.runID).classed("hoverHighlight" + activeHighlight, false);
+  if(showImages){
+      console.log('no image found');
+    }
+
+  tip.hide(d);
+}
+
+function changeActiveHighlight(activeHighlight,i){
+
+
+  d3.selectAll(".bar" + highlightImages[activeHighlight]).classed("hoverHighlight" + activeHighlight, false);
+  highlightImages[activeHighlight] = i;
+  getPotentialData(0,highlightImages[0]);
+  setImage(activeHighlight, i);
+
+}
+function updateRowHighlights(data,element){
+
+  d3.selectAll(".rowHighlightMinor").classed("rowHighlightMinor", false);
+  d3.selectAll(".rowHighlightMain").classed("rowHighlightMinor", false);
+  d3.selectAll(".rowHighlightMain").classed("rowHighlightMain", false);
+
+  d3.select(element).classed("rowHighlightMain", true);
+}
+
+
+
+
+
+d3.csv(runIdFileNameFile, function(error, data) {
+  /*
+        var vals = [];
+        var columns = d3.keys(data[0]);
+        var dataByGroup = [];
+        var maximumValue = -100000;
+
+        for(var i=0; i<columns.length;i++){
+            vals[i] = [];
+        }
+*/
+        data.forEach(function(d,runID){
+                // t,CC,L2norm,stim_name,id
+                var row = d;
+                runID = +runID;
+                runIDFileName[runID] = d.stim_name;
+                d.runID = runID;
+        });
+});
+
+d3.csv(analysisFile, function(error, data) {
+        var vals = [];
+        var columns = d3.keys(data[0]);
+        var dataByGroup = [];
+        var maximumValue = -100000;
+
+        for(var i=0; i<columns.length;i++){
+            vals[i] = [];
+        }
+
+        data.forEach(function(d,runID){
+
+                // t,CC,L2norm,stim_name,id
+
+
+                var row = d;
+                runID = +runID;
+  //                runIDFileName[runID] = d.stim_name;
+
+                d.runID = runID;
+
+                // d.runID = i;
+                columns.forEach(function(d,i){
+                  row[d] = +row[d];
+                  vals[i].push({"runID": runID, "value": row[d], "group" : d});
+                  if(row[d] > maximumValue)
+                    maximumValue=row[d];
+                });
+                numRuns++;
+        });
+
+
+        d3.selectAll("button")
+          .on("click", function(d,i) {return nextImage(d,i,this);});
+
+        if (showImages){
+          console.log('no image')
+
+          for (var i = 0; i < numImages; i++) {
+              var r = images
+                .append("rect")
+                  .attr("class", function(){return "highlight" + i;})
+                  .attr("width", "250")
+                  .attr("height", "190")
+                  .attr("x", function(){return i*250+50*i;})
+                  .attr("y","100");
+
+
+
+                images.append("image")
+                  .attr("id", "image" + i)
+                  .attr("height", "230")
+                  .attr("width", "230")
+                  .attr("x", function(){return i*250+50*i +10;})
+                  .attr("y","80")
+                  .attr("xlink:href", "data/runPotValueImagesOLD/dataset_"+dataset+"/dataset_"+dataset+"run_"+Math.floor((numRuns/numImages)*i+1) +".png")
+                  .on("click", function(){
+                    activeHighlight = this.getAttribute("id").slice(-1);
+                  });
+          }
+        }else{
+          for (var i = 0; i < numImages; i++) {
+            highlightImages[i]=Math.floor((numRuns/numImages)*i+1);
+          }
+        }
+
+
+
+        for(var i=0; i<columns.length;i++){
+          if(columns[i] != 'stim_name')
+            dataByGroup.push({ "key": columns[i], "values": vals[i]});
+        }
+
+  stack(dataByGroup);
+
+  x.domain(data.map(function(d) { return d.runID; }));
+  y0.domain(dataByGroup.map(function(d) { return d.key; }));
+
+  columns.forEach(function(d,i){
+    yIndividual[d] = d3.scale.linear();
+    yIndividual[d].domain([d3.min(data, function(dat) { return dat[d]; }) ,d3.max(data, function(dat) { return dat[d]; }) ]).range([y0.rangeBand(), 0]);
+    yAxisIndividual[i] = d3.svg.axis()
+      .scale(yIndividual[d])
+      .orient("left")
+      .ticks(2);
+  });
+
+
+  var group = main.selectAll(".group")
+      .data(dataByGroup)
+    .enter().append("g")
+      .attr("class", "group")
+      .attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
+
+
+  group.selectAll("rect")
+      .data(function(d) { return d.values; })
+    .enter().append("rect")
+      .attr("class", function(d,i) { return colorClass(d.group, i) + " bar" + d.runID + " bar" + d.group;})
+      .attr("x", function(d) { return x(d.runID); })
+      .attr("y", function(d) { return yIndividual[d.group](d.value); })
+      .attr("width", x.rangeBand())
+      .attr("height", function(d) { return y0.rangeBand() - yIndividual[d.group](d.value); })
+      .on('mouseover', function(d) {highlightON(d)})
+      .on('mouseout', function(d) {highlightOFF(d)})
+      .on("click", function(d,i) {
+        changeActiveHighlight(activeHighlight,i);
+      });
+
+
+      // this function based on
+      //https://bl.ocks.org/mbostock/3885705
+      function sort(key, order) {
+
+          var x0;
+
+          if(order == 'descending'){
+            x0 = x.domain(data.sort(
+              function(a, b) {return a[key] - b[key]; })
+                .map(function(d) { return d.runID; }))
+                .copy();
+          }else{
+          // Copy-on-write since tweens are evaluated after a delay.
+            x0 = x.domain(data.sort(
+              function(a, b) {return b[key] - a[key]; })
+                .map(function(d) { return d.runID; }))
+                .copy();
+          }
+
+
+          for(var i=0;  i < columns.length; i++){
+
+          svg.selectAll(".bar"+columns[i])
+            .sort(function(a, b) {return x0(a.runID) - x0(b.runID); });
+
+          var transition = svg.transition().duration(750),
+            delay = function(d, i) { return i * 1; };
+
+          transition.selectAll(".bar")
+            .delay(delay)
+            .attr("x", function(d) {return x0(d.runID); });
+
+          transition.select(".x.axis")
+            .call(xAxis)
+            .selectAll("g")
+            .delay(delay);
+          }
+      }
+
+
+  for(var i=0;  i < group[0].length; i++){
+    var rowChart = d3.select(group[0][i]).append("g")
+    .attr("class", "y axis")
+    .call(yAxisIndividual[i]);
+
+    rowChart
+    .append("text")
+      .attr("class", "group-label")
+      .attr("transform", function(d) { return "translate(-60,"+ y0.rangeBand()/3
+       +"),rotate(-90)";})
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text(function(d){return d.key;})
+      .on("click", function(d){updateRowHighlights(d,this); sort(d.key);return d;})
+
+
+
+    rowChart
+    .append("text")
+      .attr("class", "group-label")
+      .attr("transform", function(d) {
+          return "translate("+(x(d.values.length -1)+20)+","+ y0.rangeBand()/3
+       +"),rotate(-90)";})
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("text-anchor", "end")
+      .text(function(d){return d.key;})
+      .on("click", function(d){updateRowHighlights(d,this); sort(d.key, 'descending');return d;});
+  }
+
+
+
+  for(var key in colorScales){
+
+    d3.select('#selectColorScale')
+      .append('option')
+      .attr("value", key)
+      .text(key);
+  }
+  d3.select('#selectColorScale')
+    .on('change', function(){ changeColorScale();});
+
+  d3.select('#revertColor')
+    .on('change', function(){ changeColorScale();});
+
+
+  d3.select('#categorical')
+    .on('change', function(){ changeColorScale();});
+
+  d3.selectAll('.inputHighlight')
+    .on('change', function(e,i){ changeActiveHighlight(parseInt(this.id.substring(15,16)),this.value);});
+
+    
+
+  changeColorScale();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</html>

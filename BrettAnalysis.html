@@ -492,13 +492,13 @@ var analysisFiles = [];
 
 
 ///////////////////////////
-// BRETT:
+// @BRETT:
 ///////////////////////////
 // type here which number you want to look at:
 // 0 = inputRatios
 // 1 = statistical
 // 2 = PCA
-var analysisToLoad = 0;
+var analysisToLoad = 3;
 
 
 
@@ -506,8 +506,8 @@ var analysisToLoad = 0;
 // 0 = conductivity
 // 1 = actual
 // 2 = cylinder
-var datasetToUse = 2;
-
+var datasetToUse = 0;
+//TOMORROW: alaysis to load 3, datasetTo show 1
 
 
 // old Datasets
@@ -516,7 +516,7 @@ switch (datasetToUse){
   // old Datset -> conductivities
   case 0:
     var meshFile = 'data/Brett/201701_Conductivity/mesh/heartPts.csv';
-    var potentialFieldsFolder = 'data/Brett/201701_Conductivity/mesh/simRuns/dataset_' +dataset+'/';
+    var potentialFieldsFolder = 'data/Brett/201701_Conductivity/simRuns/dataset_' +dataset+'/';
 
     // input Ratios
     analysisFiles[0] = 'data/Brett/201701_Conductivity/Measures/inputRatios/inputRatios.csv';
@@ -528,7 +528,10 @@ switch (datasetToUse){
 
     // pca
     analysisFiles[2] = 'data/Brett/201701_Conductivity/Measures/inputsPCA_123/dataset_' +dataset+'_pcaWeight.csv'
-    break;
+
+    // pca
+    analysisFiles[3] = 'data/Brett/201701_Conductivity/Measures/depthRandsub/depthRand_j_2-3dataset_2.csv'
+    break;  
 
 
 
@@ -548,6 +551,8 @@ switch (datasetToUse){
 
     // 2 - pca
     analysisFiles[2] = 'data/Brett/201708_CylinderActual/Actual/Measures/pca_dataset_'+dataset+'.csv';
+
+    analysisFiles[3] = 'data/Brett/201708_CylinderActual/Actual/Measures/MedMeanStdMinMaxPCA_dataset_3.csv'
     break;
 
   case 2:
@@ -567,6 +572,12 @@ switch (datasetToUse){
     // 2 - pca
     analysisFiles[2] = 'data/Brett/201708_CylinderActual/Actual/Measures/pca_dataset_3.csv';
     break;
+
+
+  case 3:
+      var meshFile = 'data/Brett/20170912_new/30Run/mesh/heartPts.csv';
+      var potentialFieldsFolder = 'data/Brett/20170912_new/30Run/simRuns/';
+        analysisFiles[0] = 'data/Brett/20170912_new/30Run/Measures/30RunMeasures.csv';
 
 
 }
@@ -669,6 +680,7 @@ var positions;
 
 
 d3.csv(meshFile, function(error, dataPos) {
+  console.log(dataPos)
 
   particles = dataPos.length;
   positions = new Float32Array(particles * 3);
@@ -1068,7 +1080,7 @@ var getPotentialData = function(curHighlight, curRun){
 
     //data/potentialFields/datatset_'+dataset+'/dataset_'+dataset+'_run'+curRun+'.txt'
     d3.text(potentialFieldsFolder + 'run_' + curRun + '.txt', function(text) {
-
+      console.log(text)
         var data = d3.csv.parseRows(text).map(function(row) {
           return row.map(function(value) {
             return +value;
@@ -1359,6 +1371,7 @@ d3.csv(analysisFiles[analysisToLoad], function(error, data) {
                 });
                 numRuns++;
         });
+        console.log(data)
 
 
         d3.selectAll("button")

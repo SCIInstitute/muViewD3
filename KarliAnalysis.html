@@ -672,7 +672,7 @@ d3.csv(positionFile, function(error, dataPos) {
   controls = new THREE.OrbitControls (camera, renderer.domElement);
 
 
-
+console.log(highlightImages);
 
   //load and show initial data
   getPotentialData(0,highlightImages[0]);
@@ -1019,18 +1019,23 @@ var getPotentialData = function(curHighlight, curRun){
 var changeColorScale = function(){
 
 
-
   var revert = document.getElementById('revertColor').checked;
   categorical = document.getElementById('categorical').checked;
 
   var select = document.getElementById('selectColorScale');
+
+
+  var cloneOfColor = JSON.parse(JSON.stringify(colorScales[select.options[select.selectedIndex].value]));
+
+
   selectedColors = colorScales[select.options[select.selectedIndex].value];
 
 
-
   if(revert){
-    selectedColors = selectedColors.reverse();
+    cloneOfColor = cloneOfColor.reverse();
   }
+
+  selectedColors = cloneOfColor;
 
   var legendWidth = 50;
   var legendHeight =  195;
