@@ -723,7 +723,7 @@ function getStyleRuleValue(style, selector) {
 }
 
 var minPotentialValues = 0;
-var maxPotentialValues = 180;//20;
+var maxPotentialValues = 1;//20;
 
 
 
@@ -760,6 +760,7 @@ var specialColorScales = {
         return d3.scale.linear().domain(quantiles).range(grayScale);
       },
       'histogramEqualizeColorSelectedColor': function(values){
+        console.log(values)
 
           var buckets = selectedColors.length;
 
@@ -798,7 +799,8 @@ var selectedColors = colorScales.default;
 
 
 // TODO data dependant
-var colorAxisDomain = [minPotentialValues, 23,33,47,maxPotentialValues];
+var colorAxisDomain = [0,0.0125, 0.125,0.25, 1];
+console.log(colorAxisDomain)
 
 var colorScalePotentialValues = d3.scale.linear()
     .domain(colorAxisDomain)
@@ -989,7 +991,6 @@ var getPotentialData = function(curHighlight, curRun){
 
     //TODO data
     d3.text('data/Sumientra/runs/run_' + curRun + '.txt', function(text) {
-
         var data = d3.csv.parseRows(text).map(function(row) {
           return row.map(function(value) {
             return +value;
@@ -1065,14 +1066,15 @@ var changeColorScale = function(){
 
 	var arrColor=[];
 	var arrData=[];
-	for(var i = 0;i<100;i++){
+	for(var i = minPotentialValues;i<maxPotentialValues;i=i+(maxPotentialValues-minPotentialValues)/100){
 	  arrData.push(i)
 	  arrColor.push(colorScalePotentialValues(i))
 	}
 
+console.log(arrColor)
 
   var pct = linspace(0, 100, arrColor.length).map(function(d) {
-      return Math.round(d) + '%';
+      return Math.round(d*100)/100 + '%';
   });
 
   var colourPct = d3.zip(pct, arrColor);
@@ -1101,8 +1103,8 @@ var changeColorScale = function(){
   var legendAxis = d3.svg.axis()
       .scale(legendScale)
       .orient("left")
-      .tickValues(d3.range(d3.min(arrData), d3.max(arrData), 5))
-      .tickFormat(d3.format("d"));
+      .tickValues(d3.range(d3.min(arrData), d3.max(arrData), 0.1))
+      .tickFormat(d3.format(".2n"));
 
   main.append("g")
       .attr("id", "colorAxis")
